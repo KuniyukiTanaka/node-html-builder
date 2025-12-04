@@ -1,0 +1,9 @@
+{
+  "buildList": [
+    {
+      "label": "Demo",
+      "whiteSpaceFilter":false,
+      "TemplatePreview.start": "assets@demo/templates/Demo/tmpl/index.ejs"
+    }
+  ]
+}

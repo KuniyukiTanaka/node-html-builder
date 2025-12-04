@@ -1,8 +1,7 @@
-import { messTitle, messCollor } from '../lib/filter.mjs'
+import { messTitle, consoleCollor } from '../lib/filter.mjs'
 import fs from 'fs'
 import path from 'path'
 import sharp from 'sharp'
-import { makeDirectory } from 'make-dir';
 import { parseArgs } from 'node:util'
 
 new class {
@@ -71,13 +70,13 @@ new class {
       }
     }).values
     if (!(o.input || o.dir)) {
-      throw messCollor('need Option, --input:-i or --dir:-d.', 4)
+      throw consoleCollor('need Option, --input:-i or --dir:-d.', 4)
     }
     this.set = {
       input: o.input,
       dir: o.dir,
       subname: o.subname.replace(/[^a-zA-Z0-9]+/g, ''),
-      sized: (o.sized || '').split(/[^0-9]+/g).map(a => parseInt(a)).extInt(),
+      sized: (o.sized || '').split(/[^0-9]+/g).map(a => parseInt(a)).exIntFilter(),
       origin: o.origin,
       override: o.override,
       subdir: o.subdir,
@@ -90,14 +89,14 @@ new class {
       _eM = '[option:-i] Failure to filePath.', this.set.input ? fs.readFileSync(this.set.input) : 0
     } catch (_e) {
       console.log(messTitle(_eM, 2), _e)
-      process.exit(0)
+      process.exit(1)
     }
     return this.set.input || this.set.dir + glob_ptn
   }
   initDir(baseDir) {
     if (this.set.subdir && Array.isArray(this.set.sized)) {
       const sd = (this.set.origin) ? [this.set.subname] : this.set.sized
-      for (const subname of sd) makeDirectory(path.join(baseDir, subname.toString()))
+      for (const subname of sd) fs.mkdirSync(path.join(baseDir, subname.toString()), { recursive: true })
     }
   }
   fileOut(data, format, { input, ext, dir, base }, sized = '') {
