@@ -1,30 +1,40 @@
 {
-  "name": "node-html-builders",
-  "description": "node-html-builders",
+  "name": "node-html-builder",
+  "decription": "node-html-builders",
   "version": "1.0.0",
-  "license": "MIT-3",
+  "license": "MIT",
   "author": "Kuniyuki Tanaka",
   "type": "module",
   "private": true,
   "volta": {
     "node": "24.11.1"
   },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
-    "build-tmpl": "node assets/run/build-tmpl  && (node assets/run/bs  & npm run build-live)",
-    "build-live": "onchange 'assets/templates/**/*' -e '**/_**/**' -- node assets/run/build-tmpl -f {{file}}",
-    "media-comp": "node assets/run/mediacomp",
-    "mjs": "node test/ts.mjs"
+    "build-tmpl": "node run/build-tmpl & npm run build-live",
+    "build-live": "onchange 'assets/templates/**/*' -e '**/_**/**' -- node run/build-tmpl -f {{file}}",
+    "build-demo": "node run/build-tmpl -z & npm run build-demo-l",
+    "build-demo-s": "node run/build-tmpl -z",
+    "build-demo-l": "onchange 'assets@demo/templates/**/*' -e '**/_**/**' -- node run/build-tmpl -z -f {{file}}",
+    "media-comp": "node run/mediacomp",
+    "test:asset": "node --test test/Asset.test.mjs"
   },
   "dependencies": {
     "autoprefixer": "^10.4.22",
     "browser-sync": "^3.0.4",
     "csv-parse": "^6.1.0",
     "ejs": "^3.1.10",
+    "onchange": "^7.1.0",
     "postcss": "^8.5.6",
     "postcss-gap-properties": "^6.0.0",
     "postcss-minify": "^1.2.0",
     "sass": "^1.94.2",
     "sharp": "^0.34.5",
     "uglify-js": "^3.19.3"
+  },
+  "devDependencies": {
+    "baseline-browser-mapping": "^2.9.18"
   }
 }

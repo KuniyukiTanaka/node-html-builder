@@ -1,5 +1,4 @@
-import { consoleCollor, dafaultCollor, getProtoName } from './filter.mjs'
-import { parseArgs } from 'node:util'
+import { consoleCollor, dafaultCollor, getProtoName } from '../lib/filter.mjs'
 import fs from 'fs'
 import path from 'path'
 import ejs from 'ejs'
@@ -12,7 +11,7 @@ import { parse } from 'csv-parse/sync'
 import { createRequire } from 'module'
 import UglifyJS from 'uglify-js'
 import bs from 'browser-sync'
-import { fstatSync } from 'node:fs'
+import { parentPort, workerData } from 'node:worker_threads'
 
 const require = createRequire(import.meta.url);
 const interpretDirectScripts = ({ Sync, Loaded, option }) => {
@@ -20,18 +19,18 @@ const interpretDirectScripts = ({ Sync, Loaded, option }) => {
   const r = Case(Sync) + Case(Loaded)
   return !option?.minify ? r.replace(/;/g, ';\n') : UglifyJS.minify(r).code
 }
+const { FILES, BLD, SET_NAME } = workerData
 
-const Filter = new class {
+const Filter = new class FwFilter {
   preview = [this.practice, this.testcase]
-  fook = {
+  Hook = {
     preview: (data, methods = []) => {
       if (getProtoName(methods) === 'String') {
-        (methods === 'all') ? this.preview.map(m => data.code = m(data)) : this.fook.preview(data, [methods])
+        (methods === 'all') ? this.preview.map(m => data.code = m(data)) : this.Hook.preview(data, [methods])
       }
       return data.code
     }
   }
-
   practice({ code, practice }) {
     if (practice) {
       code = code.replace('</head>', r => `<script name="__practice__">__practice__=${JSON.stringify((getProtoName(practice) === 'String') ? JSON.parse(fs.readFileSync(path.normalize(practice))) : practice)}</script></head>`)
@@ -48,63 +47,7 @@ const Filter = new class {
   }
 }
 
-const bld = class Builder {
-  flugs =
-    parseArgs({
-      "options": {
-        "cfgJson": {
-          "short": "c",
-          "type": "string",
-          "default": "assets/config/build-tmpl.json"
-        },
-        "bldPath": {
-          "short": "d",
-          "type": "string",
-          "default": "assets/templates"
-        },
-        "bldFile": {
-          "short": "f",
-          "type": "string",
-          "default": ""
-        }
-        ,
-        "demo": {
-          "short": "z",
-          "type": "boolean",
-          "default": false
-        }
-      }
-    }).values;
-  constructor(test = false) {
-    this.setDemo(test)
-    try {
-      const setJson = JSON.parse(fs.readFileSync(path.join(process.cwd(), this.flugs.cfgJson), 'utf-8'))
-      this.live = !!this.flugs.bldFile;
-      this.buildFile = this.flugs.bldFile;
-      this.source = setJson['source'] || this.flugs.bldPath
-      this.site = setJson['buildList'].filter(dpSet => (dpSet['label'] && this.chkDir(dpSet['label'])))
-    } catch (_e) {
-      console.error({ pa: 'Builder:constructor', cfgJsonExist: fs.existsSync(this.flugs.cfgJson), _e })
-      process.exit(1)
-    }
-  }
-  setDemo(test) {
-    if (this.flugs.demo || test) {
-      this.flugs.cfgJson = "assets@demo/config/build-tmpl.json"
-      this.flugs.bldPath = "assets@demo/templates"
-    }
-  }
-  chkDir(label) {
-    const { dir, chk, mes } = {
-      dir: path.join(process.cwd(), this.source, label),
-      chk: dp => (fs.existsSync(dp) && fs.statSync(dp).isDirectory()),
-      mes: _ => { this.live || console.error(consoleCollor(`buildSkiped :: "${label}" is not directory.`, 6, 1)) }
-    }
-    return chk(dir) || (mes(), false)
-  }
-}
-
-const ext = class eXtracter {
+const EXTRACT = new class eXtracter {
   worker = {
     TemplateHook(code, data) {
       const regex = /\[\[__([\w_-]+)__\]\]/g
@@ -124,7 +67,7 @@ const ext = class eXtracter {
     },
     Import: async _ => {
       try {
-        site.map(dpSet => {
+        BLD.site.map(dpSet => {
           if (getProtoName(dpSet['importAssets']) === 'Object') {
             for (const [dp, e] of Object.entries(dpSet['importAssets'])) {
               for (const src of e.split('|')) {
@@ -177,7 +120,7 @@ const ext = class eXtracter {
       }
     },
     exEJS: _ => {
-      if (live && this.running.base.endsWith('.cjs')) {
+      if (BLD.live && this.running.base.endsWith('.cjs')) {
         this.running = {
           ...this.running,
           ...(i => ({ input: i, ...path.parse(i) }))(this.running.input.replace(/\.cjs$/, '.ejs'))
@@ -212,14 +155,7 @@ const ext = class eXtracter {
 
     }
   }
-  constructor(test = false) {
-    (({ site, live, buildFile, source }) => {
-      this.site = site
-      this.live = live
-      this.buildFile = buildFile
-      this.source = source
-    })(new bld(test))
-  }
+  // constructor() {}
   _cation({ method, log, data = undefined }) {
     console.error(
       consoleCollor((l => [l, `Cation:eXtracter.${method}()`, l].join('\n'))('='.repeat(100)), 1) + dafaultCollor(),
@@ -234,7 +170,7 @@ const ext = class eXtracter {
   }
   _ejsOpViews() {
     return [
-      path.join(source, this.running.deploySet['label']),
+      path.join(BLD.source, this.running.deploySet['label']),
       this.running.dir,
       ''
     ]
@@ -252,15 +188,15 @@ const ext = class eXtracter {
     }
   }
   _setPreview(dpSet, input, practice) {
-    const siteRoot = path.join(this.source, dpSet['label'])
-    const siteReg = siteRoot + dpSet['TemplatePreview.start'].replace(path.join(siteRoot), '')
+    const siteRoot = path.join(BLD.source, dpSet['label'], '/')
+    const siteReg = siteRoot + dpSet['TemplatePreview.start'].replace(siteRoot, '')
     try {
       fs.statSync(siteReg)
       return (prebuild =>
         (prebuild) ?
           {
             prebuild,
-            target: (prebuild && live) ? input : prebuild,
+            target: (prebuild && BLD.live) ? input : prebuild,
             basetmpl: dpSet['TemplatePreview.baseTmpl'] || '',
             styles: dpSet['TemplatePreview.styles'] || [],
             testcase: dpSet['TemplatePreview.testCase'] || null,
@@ -274,7 +210,7 @@ const ext = class eXtracter {
           start: dpSet['TemplatePreview.start'],
           siteReg
         },
-        log: `[SKIP:Preview] TemplatePreview.start is invaild value. check build-tmpl.json`
+        log: [`[SKIP:Preview] TemplatePreview.start is invaild value. check build-tmpl.json`, _e]
       })
       dpSet['TemplatePreview.start'] = null
       return null
@@ -285,7 +221,7 @@ const ext = class eXtracter {
     this.running = {
       input: path.normalize(fp),
       ...analyzed,
-      deploySet: site.find(dpSet => analyzed.dir.indexOf(path.sep + dpSet['label'] + path.sep) > 1)
+      deploySet: BLD.site.find(dpSet => analyzed.dir.indexOf(path.join(path.sep, dpSet['label'], path.sep)) > 1)
     }
   }
   Asset(src, dest) {
@@ -339,13 +275,13 @@ const ext = class eXtracter {
       name: 'index',
       dir: path.join('html', this.running.deploySet['label'], 'p'),
       ext: '.html',
-      code: Filter.fook.preview({ code: previewHtml, practice, testcase }, 'all')
+      code: Filter.Hook.preview({ code: previewHtml, practice, testcase }, 'all')
     })
   }
-  previewServ(site = [], port = 1000) {
-    if (!site.length) return
+  previewServ(s = [], p = 1000) {
+    if (!s.length) return
 
-    for (const dpSet of site) {
+    for (const dpSet of s) {
       if (Object.getPrototypeOf(dpSet['TemplatePreview.start'] || false) === String.prototype) {
         const sv_ops = Object.assign(
           {
@@ -354,14 +290,14 @@ const ext = class eXtracter {
             open: false,
             logLevel: "silent",
             server: `${process.cwd()}/html/${dpSet['label']}/`,
-            port: port,
+            port: p,
             reloadDelay: 500,
-            ui: { port: port + 1 }
+            ui: { port: p + 1 }
           }
         )
         bs.create().init(sv_ops)
         console.log({ [dpSet['label']]: `http://localhost:${sv_ops.port}/p/` })
-        port += 1000
+        p += 1000
       } else {
         console.log({ [dpSet['label']]: 'no Pleview' })
       }
@@ -369,6 +305,23 @@ const ext = class eXtracter {
   }
 }
 
-const { builder, previewServ, site, live, buildFile, source } = new ext();
-export { site, live, previewServ, buildFile, source, builder }
-export { bld, ext }
+//  buildStat 
+const statusLabel = consoleCollor(...(BLD.live ? [`[Updated] ${FILES} `, 5] : [`[BuildCompleted] ${SET_NAME} `, 7])) + dafaultCollor()
+const buildStat = list => {
+  try {
+    list.forEach(f => EXTRACT.builder.fileBuild(f))
+  } catch (_e) {
+    (getProtoName(list) === 'String') ? buildStat([list]) : console.error(_e)
+  }
+}
+
+console.time(statusLabel)
+buildStat(FILES)
+console.timeEnd(statusLabel)
+
+parentPort.postMessage({
+  live: BLD.live,
+  site: BLD.site,
+  SET_NAME,
+  FILES
+})
