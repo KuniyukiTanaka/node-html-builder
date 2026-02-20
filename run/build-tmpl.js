@@ -98,26 +98,26 @@ class Finarizer {
         if (getProtoName(dpSet['importAssets']) === 'Object') {
           for (const [dp, e] of Object.entries(dpSet['importAssets'])) {
             for (const src of e.split('|')) {
-              this.Asset(path.normalize(src), path.join('html', dpSet['label'], dp))
+              this.Asset(path.normalize(src), path.join('html', dpSet['label'], dp), dpSet['importAssets.recursive'])
             }
           }
         }
       })
     } catch (_e) {
-      console.error({ method: 'assetImporter', mess: '[SKIP:ImportAssets]invalid importFile Settings,Check build-tmpl.json', _e },dafaultCollor())
+      console.error({ method: 'assetImporter', mess: '[SKIP:ImportAssets]invalid importFile Settings,Check build-tmpl.json', _e }, dafaultCollor())
     }
   }
-  Asset(src, dest) {
+  Asset(src, dest, recursive = false) {
     const p = fs.statSync(src)
     if (p.isDirectory()) {
-      const subDir = fs.readdirSync(src, { withFileTypes: true })
+      const subDir = fs.readdirSync(src, { withFileTypes: true }).filter(d => d.isFile() || recursive)
       for (const dirent of subDir) {
         this.Asset(path.join(src, dirent.name), path.join(dest, dirent.name))
       }
     } else {
       if (src.match(/\/\./)) {
         console.log([`importThrow:: ${src}`])
-        if (src.endsWith('.DS_Store')) fs.unlink(src, _e => { console.error([_e ? `ERR:notDeleted:: ${src}` : `Deleted:: ${src}`],dafaultCollor()) })
+        if (src.endsWith('.DS_Store')) fs.unlink(src, _e => { console.error([_e ? `ERR:notDeleted:: ${src}` : `Deleted:: ${src}`], dafaultCollor()) })
         return
       }
       const [parents, fileName] = path.extname(dest) ? [path.dirname(dest), ''] : [dest, path.basename(src)];
