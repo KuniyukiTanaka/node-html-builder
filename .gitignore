@@ -3,3 +3,4 @@
 /html
 **/img
 package-lock.json
+node_modules/**

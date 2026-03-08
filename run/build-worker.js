@@ -201,10 +201,17 @@ const EXTRACT = new class eXtracter {
   }
   _setRunning(fp) {
     const analyzed = path.parse(fp);
+    const pathFilter = analyzed=>{
+      const olgn = BLD.site.find(dpSet => analyzed.dir.indexOf(path.join(path.sep, dpSet['label'], path.sep)) > 1)
+      if (olgn['TemplatePreview.start']) {
+        olgn['TemplatePreview.start'] = path.normalize(olgn['TemplatePreview.start'])
+      }
+      return olgn
+    }
     this.running = {
       input: path.normalize(fp),
       ...analyzed,
-      deploySet: BLD.site.find(dpSet => analyzed.dir.indexOf(path.join(path.sep, dpSet['label'], path.sep)) > 1)
+      deploySet: pathFilter(analyzed)
     }
   }
   CJS(code) {

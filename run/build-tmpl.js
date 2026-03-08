@@ -6,6 +6,7 @@ import bs from 'browser-sync'
 import { Worker } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url';
 
+// ['TemplatePreview.start']の取り扱いに課題
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const defaultOps = _ => {
