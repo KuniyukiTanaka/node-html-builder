@@ -4,6 +4,8 @@ import path from 'path'
 import sharp from 'sharp'
 import { parseArgs } from 'node:util'
 
+// 圧縮済みファイルを再圧縮してしまう問題
+
 new class {
   constructor() {
     const files = fs.globSync(this._init('/*.+(png|jpg|jpeg)'), { ignore: ['/**/+(_**).*', '/**/*.*.*'] })

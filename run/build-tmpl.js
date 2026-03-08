@@ -4,51 +4,49 @@ import fs from 'fs'
 import path from 'path'
 import bs from 'browser-sync'
 import { Worker } from 'node:worker_threads'
-
-import ejs from 'ejs'
-import postcss from 'postcss'
-import cssGap from 'postcss-gap-properties'
-import cssMinify from 'postcss-minify'
-import autoprefixer from 'autoprefixer'
-import * as sass from 'sass'
-import { parse } from 'csv-parse/sync'
-import { createRequire } from 'module'
-import UglifyJS from 'uglify-js'
 import { fileURLToPath } from 'node:url';
 
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const BLD = new class Builder {
-  flugs =
-    parseArgs({
-      "options": {
-        "cfgJson": {
-          "short": "c",
-          "type": "string",
-          "default": "assets/config/build-tmpl.json"
-        },
-        "bldPath": {
-          "short": "d",
-          "type": "string",
-          "default": "assets/templates"
-        },
-        "bldFile": {
-          "short": "f",
-          "type": "string",
-          "default": ""
-        },
-        "exclude": {
-          "short": "e",
-          "type": "string",
-          "default": "**/_**/**,**/etc/**"
-        },
-        "demo": {
-          "short": "z",
-          "type": "boolean",
-          "default": false
-        }
+const defaultOps = _ => {
+  const flugs = parseArgs({
+    "options": {
+      "cfgJson": {
+        "short": "c",
+        "type": "string",
+        "default": "assets/config/build-tmpl.json"
+      },
+      "bldPath": {
+        "short": "d",
+        "type": "string",
+        "default": "assets/templates"
+      },
+      "bldFile": {
+        "short": "f",
+        "type": "string",
+        "default": ""
+      },
+      "exclude": {
+        "short": "e",
+        "type": "string",
+        "default": "**/_**/**,**/etc/**"
+      },
+      "demo": {
+        "short": "z",
+        "type": "boolean",
+        "default": false
       }
-    }).values;
+    }
+  }).values;
+  for (const [k, v] of Object.entries(flugs)) {
+    if (!!v && typeof v === 'string') {
+      flugs[k] = path.normalize(v)
+    }
+  }
+  return flugs
+}
+const BLD = new class Builder {
+  flugs = defaultOps()
   constructor(test = false) {
     this.setDemo(test)
     const setJson = JSON.parse(fs.readFileSync(path.join(process.cwd(), this.flugs.cfgJson), 'utf-8'))
@@ -72,8 +70,8 @@ const BLD = new class Builder {
   }
   setDemo(test) {
     if (this.flugs.demo || test) {
-      this.flugs.cfgJson = "assets@demo/config/build-tmpl.json"
-      this.flugs.bldPath = "assets@demo/templates"
+      this.flugs.cfgJson = path.normalize("assets@demo/config/build-tmpl.json")
+      this.flugs.bldPath = path.normalize("assets@demo/templates")
     }
   }
   chkDir(label) {
@@ -89,7 +87,6 @@ const BLD = new class Builder {
 class Finarizer {
   constructor() {
     this.Import()
-    // console.log(dafaultCollor())
     this.previewServ(BLD.site)
   }
   Import(_) {
@@ -115,7 +112,7 @@ class Finarizer {
         this.Asset(path.join(src, dirent.name), path.join(dest, dirent.name))
       }
     } else {
-      if (src.match(/\/\./)) {
+      if (src.match(`${path.sep}[.]`)) {
         console.log([`importThrow:: ${src}`])
         if (src.endsWith('.DS_Store')) fs.unlink(src, _e => { console.error([_e ? `ERR:notDeleted:: ${src}` : `Deleted:: ${src}`], dafaultCollor()) })
         return
@@ -128,7 +125,6 @@ class Finarizer {
 
   previewServ(s = [], p = 1000) {
     if (!s.length) return
-
     for (const dpSet of s) {
       if (Object.getPrototypeOf(dpSet['TemplatePreview.start'] || false) === String.prototype) {
         const sv_ops = Object.assign(
@@ -137,7 +133,7 @@ class Finarizer {
             watch: true,
             open: false,
             logLevel: "silent",
-            server: `${process.cwd()}/html/${dpSet['label']}/`,
+            server: path.join(process.cwd(),'html',dpSet['label']),
             port: p,
             reloadDelay: 500,
             ui: { port: p + 1 }
@@ -154,7 +150,6 @@ class Finarizer {
 };
 
 ((r = null) => {
-  // let thread = []
   for (const dpSet of BLD.live ? [''] : BLD.site) {
     const FILES = BLD.buildFile || fs.globSync(path.join(BLD.source, dpSet['label'], '+(tmpl|scss)/**/*.*'), { exclude: BLD.exclude }).sort(f => path.extname(f) === '.scss' ? -1 : 1)
     r = new Worker(
@@ -170,13 +165,7 @@ class Finarizer {
         }
       }
     )
-    // r.stdout.once('data', data => console.log(data.toString()))
-    // r.stderr.once('error', error => console.log(error.toString()))
   }
-
-  // r.stdout.once('data', data => console.log(data.toString()))
-  // r.once('exit', _ => thread.pop())
-
   if (r) {
     r.once('message', ({ FILES }) => {
       if (getProtoName(FILES) === 'String') {
@@ -185,19 +174,6 @@ class Finarizer {
         // clearInterval(inTervaled);
         new Finarizer()
       }
-
-
-
-      // let inTervaled
-      // const finarize = (live, thread) => {
-
-      //   if (live === false && thread.length === 0) {
-      //   }
-      //   if (live === true && thread.length === 0) {
-      //     clearInterval(inTervaled);
-      //   }
-      // }
-      // inTervaled = setInterval(finarize, 50, live, thread)
     })
   }
 }

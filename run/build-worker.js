@@ -65,21 +65,6 @@ const EXTRACT = new class eXtracter {
         process.exit(1)
       }
     },
-    Import: async _ => {
-      try {
-        BLD.site.map(dpSet => {
-          if (getProtoName(dpSet['importAssets']) === 'Object') {
-            for (const [dp, e] of Object.entries(dpSet['importAssets'])) {
-              for (const src of e.split('|')) {
-                this.Asset(path.normalize(src), path.join('html', dpSet['label'], dp))
-              }
-            }
-          }
-        })
-      } catch (_e) {
-        console.error({ method: 'assetImporter', mess: '[SKIP:ImportAssets]invalid importFile Settings,Check build-tmpl.json', _e })
-      }
-    },
     Throw: ({ input, deploySet, name, ext }) => {
       try {
         this._output({
@@ -155,7 +140,6 @@ const EXTRACT = new class eXtracter {
 
     }
   }
-  // constructor() {}
   _cation({ method, log, data = undefined }) {
     console.error(
       consoleCollor((l => [l, `Cation:eXtracter.${method}()`, l].join('\n'))('='.repeat(100)), 1) + dafaultCollor(),
@@ -188,8 +172,7 @@ const EXTRACT = new class eXtracter {
     }
   }
   _setPreview(dpSet, input, practice) {
-    const siteRoot = path.join(BLD.source, dpSet['label'], '/')
-    const siteReg = siteRoot + dpSet['TemplatePreview.start'].replace(siteRoot, '')
+    const siteReg = (root => path.normalize(path.join(root, dpSet['TemplatePreview.start'].replace(root, ''))))(path.join(BLD.source, dpSet['label']))
     try {
       fs.statSync(siteReg)
       return (prebuild =>
@@ -197,7 +180,7 @@ const EXTRACT = new class eXtracter {
           {
             prebuild,
             target: (prebuild && BLD.live) ? input : prebuild,
-            basetmpl: dpSet['TemplatePreview.baseTmpl'] || '',
+            basetmpl: dpSet['TemplatePreview.baseTmpl'] ? path.normalize(dpSet['TemplatePreview.baseTmpl']) : '',
             styles: dpSet['TemplatePreview.styles'] || [],
             testcase: dpSet['TemplatePreview.testCase'] || null,
             practice: practice || null,
@@ -224,27 +207,8 @@ const EXTRACT = new class eXtracter {
       deploySet: BLD.site.find(dpSet => analyzed.dir.indexOf(path.join(path.sep, dpSet['label'], path.sep)) > 1)
     }
   }
-  Asset(src, dest) {
-    const p = fs.statSync(src)
-    if (p.isDirectory()) {
-      const subDir = fs.readdirSync(src, { withFileTypes: true })
-      for (const dirent of subDir) {
-        this.Asset(path.join(src, dirent.name), path.join(dest, dirent.name))
-      }
-    } else {
-      if (src.match(/\/\./)) {
-        console.log([`importThrow:: ${src}`])
-        if (src.endsWith('.DS_Store')) fs.unlink(src, _e => { console.error([_e ? `ERR:notDeleted:: ${src}` : `Deleted:: ${src}`]) })
-        return
-      }
-      const [parents, fileName] = path.extname(dest) ? [path.dirname(dest), ''] : [dest, path.basename(src)];
-      fs.mkdirSync(parents, { recursive: true });
-      fs.copyFileSync(src, path.join(dest, fileName))
-    }
-  }
   CJS(code) {
-    const excjs = (dd => fs.existsSync(dd) ? require(`${process.cwd() + '/' + dd}`) : {})
-      (this.running.input.replace(/\.ejs$/, '.cjs'))
+    const excjs = (dd => fs.existsSync(dd) ? require(path.join(process.cwd(), dd)) : {})(this.running.input.replace(/\.ejs$/, '.cjs'))
     return [
       code.replace(
         /<ejs-template([^<>]*?)>([\s\S]*?)<\/ejs-template>/g,
@@ -277,31 +241,6 @@ const EXTRACT = new class eXtracter {
       ext: '.html',
       code: Filter.Hook.preview({ code: previewHtml, practice, testcase }, 'all')
     })
-  }
-  previewServ(s = [], p = 1000) {
-    if (!s.length) return
-
-    for (const dpSet of s) {
-      if (Object.getPrototypeOf(dpSet['TemplatePreview.start'] || false) === String.prototype) {
-        const sv_ops = Object.assign(
-          {
-            // host: "localhost",
-            watch: true,
-            open: false,
-            logLevel: "silent",
-            server: `${process.cwd()}/html/${dpSet['label']}/`,
-            port: p,
-            reloadDelay: 500,
-            ui: { port: p + 1 }
-          }
-        )
-        bs.create().init(sv_ops)
-        console.log({ [dpSet['label']]: `http://localhost:${sv_ops.port}/p/` })
-        p += 1000
-      } else {
-        console.log({ [dpSet['label']]: 'no Pleview' })
-      }
-    }
   }
 }
 
