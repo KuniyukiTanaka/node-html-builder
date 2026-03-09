@@ -13,13 +13,14 @@
     "node": ">=24"
   },
   "scripts": {
-    "build-tmpl": "node run/build-tmpl & npm run build-live",
-    "build-live": "onchange 'assets/templates/**/*' -e '**/_**/**' -- node run/build-tmpl -f {{file}}",
-    "build-demo": "node run/build-tmpl -z & npm run build-demo-l",
+    "build-tmpl": "concurrently \"node run/build-tmpl\" \"npm run build-live\"",
+    "build-live": "onchange \"assets/templates/**/*\" -e \"**/_**/**\" -- node run/build-tmpl -f {{file}}",
+    "build-demo": "concurrently \"node run/build-tmpl -z\" \"npm run build-demo-l\"",
     "build-demo-s": "node run/build-tmpl -z",
-    "build-demo-l": "onchange 'assets@demo/templates/**/*' -e '**/_**/**' -- node run/build-tmpl -z -f {{file}}",
+    "build-demo-l": "onchange \"assets@demo/templates/**/*\" -e \"**/_**/**\" -- node run/build-tmpl -z -f {{file}}",
     "media-comp": "node run/mediacomp",
-    "test:asset": "node --test test/Asset.test.mjs"
+    "test:asset": "node --test test/Asset.test.mjs",
+    "test:onchange": "onchange \"assets/templates/**/*\" -- node run/build-tmpl -z -f {{file}}"
   },
   "dependencies": {
     "autoprefixer": "^10.4.22",
@@ -35,6 +36,7 @@
     "uglify-js": "^3.19.3"
   },
   "devDependencies": {
-    "baseline-browser-mapping": "^2.9.18"
+    "baseline-browser-mapping": "^2.9.18",
+    "concurrently": "^8.2.2"
   }
 }
