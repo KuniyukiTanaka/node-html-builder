@@ -13,9 +13,9 @@
     "node": ">=24"
   },
   "scripts": {
-    "build-tmpl": "concurrently \"node run/build-tmpl\" \"npm run build-live\"",
+    "build-tmpl": "concurrently --names \"B,L\" \"node run/build-tmpl\" \"npm run build-live\"",
     "build-live": "onchange \"assets/templates/**/*\" -e \"**/_**/**\" -- node run/build-tmpl -f {{file}}",
-    "build-demo": "concurrently \"node run/build-tmpl -z\" \"npm run build-demo-l\"",
+    "build-demo": "concurrently --names \"B,L\" \"node run/build-tmpl -z\" \"npm run build-demo-l\"",
     "build-demo-s": "node run/build-tmpl -z",
     "build-demo-l": "onchange \"assets@demo/templates/**/*\" -e \"**/_**/**\" -- node run/build-tmpl -z -f {{file}}",
     "media-comp": "node run/mediacomp",
