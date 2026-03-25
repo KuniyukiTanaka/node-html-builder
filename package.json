@@ -12,15 +12,21 @@
   "engines": {
     "node": ">=24"
   },
+  "bin": {
+    "build-tmpl": "./run/build-tmpl.js"
+  },
   "scripts": {
-    "build-tmpl": "concurrently --names \"B,L\" \"node run/build-tmpl\" \"npm run build-live\"",
-    "build-live": "onchange \"assets/templates/**/*\" -e \"**/_**/**\" -- node run/build-tmpl -f {{file}}",
-    "build-demo": "concurrently --names \"B,L\" \"node run/build-tmpl -z\" \"npm run build-demo-l\"",
-    "build-demo-s": "node run/build-tmpl -z",
-    "build-demo-l": "onchange \"assets@demo/templates/**/*\" -e \"**/_**/**\" -- node run/build-tmpl -z -f {{file}}",
+    "build-tmpl": "run-p build onchange",
+    "build": "build-tmpl",
+    "onchange": "onchange \"assets/templates/**/*\" -e \"**/_**/**\" -- build-tmpl -f {{file}}",
+    "build-demo": "run-p demo:b demo:l",
+    "demo:b": "node run/build-tmpl -z",
+    "demo:l": "onchange \"assets@demo/templates/**/*\" -e \"**/_**/**\" -- node run/build-tmpl -z -f {{file}}",
     "media-comp": "node run/mediacomp",
-    "test:asset": "node --test test/Asset.test.mjs",
-    "test:onchange": "onchange \"assets/templates/**/*\" -- node run/build-tmpl -z -f {{file}}"
+    
+
+
+    "test:asset": "node --test test/Asset.test.mjs"
   },
   "dependencies": {
     "autoprefixer": "^10.4.22",
@@ -28,6 +34,7 @@
     "csv-parse": "^6.1.0",
     "ejs": "^3.1.10",
     "onchange": "^7.1.0",
+    "npm-run-all": "^4.1.5",
     "postcss": "^8.5.6",
     "postcss-gap-properties": "^6.0.0",
     "postcss-minify": "^1.2.0",
@@ -36,7 +43,6 @@
     "uglify-js": "^3.19.3"
   },
   "devDependencies": {
-    "baseline-browser-mapping": "^2.9.18",
-    "concurrently": "^8.2.2"
+    "baseline-browser-mapping": "^2.9.18"
   }
 }

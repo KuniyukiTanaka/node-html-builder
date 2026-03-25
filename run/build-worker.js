@@ -201,7 +201,7 @@ const EXTRACT = new class eXtracter {
   }
   _setRunning(fp) {
     const analyzed = path.parse(fp);
-    const pathFilter = analyzed=>{
+    const pathFilter = analyzed => {
       const olgn = BLD.site.find(dpSet => analyzed.dir.indexOf(path.join(path.sep, dpSet['label'], path.sep)) > 1)
       if (olgn['TemplatePreview.start']) {
         olgn['TemplatePreview.start'] = path.normalize(olgn['TemplatePreview.start'])
@@ -230,13 +230,15 @@ const EXTRACT = new class eXtracter {
       excjs.practice
     ]
   }
-  async Preview(code, { practice, testcase, styles }) {
+  async Preview(code, { prebuild, target, basetmpl, practice, testcase, styles }) {
     const cssList = (getProtoName(styles) === 'String' ? [styles] : styles).map(c => path.parse(c).name)
     const previewHtml =
       (code.split('\n').filter((l, i) => i < 9 && l.match(/^[\s]*?<html.*?>/i)).length) ?
         code :
         ejs.render(
-          this.running.preview.basetmpl ? fs.readFileSync(this.running.preview.basetmpl).toString() : '<html><head></head><body>' + cssList.map(css => `<link rel="stylesheet" href="/${css}.css">`).join('') + code + '</body></html>',
+          basetmpl ?
+            fs.readFileSync(basetmpl).toString() :
+            `<html><head></head><body>${cssList.map(css => `<link rel="stylesheet" href="/${css}.css">`).join('') + code}</body></html>`,
           { cssList, code },
           { views: this._ejsOpViews(), rmWhitespace: this.running.whiteSpaceFilter }
         );

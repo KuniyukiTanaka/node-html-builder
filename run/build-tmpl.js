@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { consoleCollor, dafaultCollor, getProtoName } from '../lib/filter.mjs'
 import { parseArgs } from 'node:util'
 import fs from 'fs'
@@ -5,8 +6,6 @@ import path from 'path'
 import bs from 'browser-sync'
 import { Worker } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url';
-
-// ['TemplatePreview.start']の取り扱いに課題
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const defaultOps = _ => {
@@ -63,10 +62,6 @@ const BLD = new class Builder {
     }
   }
   setSite(File, Sites) {
-    // if (!!File) {
-    //   this.site = [Sites.find(dpSet => File.indexOf(path.join(path.sep, dpSet['label'], path.sep)))]
-    // } else {
-    // }
     this.site = Sites.filter(dpSet => (dpSet['label'] && this.chkDir(dpSet['label'])))
   }
   setDemo(test) {
@@ -134,7 +129,7 @@ class Finarizer {
             watch: true,
             open: false,
             logLevel: "silent",
-            server: path.join(process.cwd(),'html',dpSet['label']),
+            server: path.join(process.cwd(), 'html', dpSet['label']),
             port: p,
             reloadDelay: 500,
             ui: { port: p + 1 }
@@ -169,12 +164,7 @@ class Finarizer {
   }
   if (r) {
     r.once('message', ({ FILES }) => {
-      if (getProtoName(FILES) === 'String') {
-        // console.log(dafaultCollor())
-      } else if (getProtoName(FILES) === 'Array') {
-        // clearInterval(inTervaled);
-        new Finarizer()
-      }
+      if (getProtoName(FILES) === 'Array') new Finarizer()
     })
   }
 }
