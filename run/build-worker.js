@@ -238,7 +238,7 @@ const EXTRACT = new class eXtracter {
         ejs.render(
           basetmpl ?
             fs.readFileSync(basetmpl).toString() :
-            `<html><head></head><body>${cssList.map(css => `<link rel="stylesheet" href="/${css}.css">`).join('') + code}</body></html>`,
+            `<html lang="${new Intl.DateTimeFormat().resolvedOptions().locale}"><head>${cssList.map(css => `<link rel="stylesheet" href="/${css}.css">`).join('')}</head><body>${code}</body></html>`,
           { cssList, code },
           { views: this._ejsOpViews(), rmWhitespace: this.running.whiteSpaceFilter }
         );

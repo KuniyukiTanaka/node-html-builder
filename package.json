@@ -16,16 +16,13 @@
     "build-tmpl": "./run/build-tmpl.js"
   },
   "scripts": {
-    "build-tmpl": "run-p build onchange",
+    "build-tmpl": "run-p build live",
     "build": "build-tmpl",
-    "onchange": "onchange \"assets/templates/**/*\" -e \"**/_**/**\" -- build-tmpl -f {{file}}",
+    "live": "onchange \"assets/templates/**/*\" -e \"**/_**/**\" -- build-tmpl -f {{file}}",
     "build-demo": "run-p demo:b demo:l",
     "demo:b": "node run/build-tmpl -z",
     "demo:l": "onchange \"assets@demo/templates/**/*\" -e \"**/_**/**\" -- node run/build-tmpl -z -f {{file}}",
     "media-comp": "node run/mediacomp",
-    
-
-
     "test:asset": "node --test test/Asset.test.mjs"
   },
   "dependencies": {

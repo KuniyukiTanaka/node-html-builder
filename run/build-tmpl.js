@@ -2,6 +2,7 @@
 import { consoleCollor, dafaultCollor, getProtoName } from '../lib/filter.mjs'
 import { parseArgs } from 'node:util'
 import fs from 'fs'
+import net from 'net';
 import path from 'path'
 import bs from 'browser-sync'
 import { Worker } from 'node:worker_threads'
@@ -118,30 +119,41 @@ class Finarizer {
       fs.copyFileSync(src, path.join(dest, fileName))
     }
   }
-
-  previewServ(s = [], p = 1000) {
+  checkPort(port) {
+    return new Promise((resolve) => {
+      const cs = net.createServer();
+      cs.once('error', _ => resolve(false))
+      cs.once('listening', _ => { cs.close(_ => resolve(true)) })
+      cs.listen({ port, host: 'localhost', exclusive: true })
+    })
+  }
+  async previewServ(s = [], p = 1000) {
     if (!s.length) return
-    for (const dpSet of s) {
-      if (Object.getPrototypeOf(dpSet['TemplatePreview.start'] || false) === String.prototype) {
-        const sv_ops = Object.assign(
-          {
-            // host: "localhost",
+    if (await this.checkPort(p)) {
+      for (const dpSet of s) {
+        if (Object.getPrototypeOf(dpSet['TemplatePreview.start'] || false) === String.prototype) {
+          const sv_ops = Object.assign({
+            host: "localhost",
             watch: true,
             open: false,
             logLevel: "silent",
             server: path.join(process.cwd(), 'html', dpSet['label']),
             port: p,
+            listen: "localhost",
             reloadDelay: 500,
             ui: { port: p + 1 }
-          }
-        )
-        bs.create().init(sv_ops)
-        console.log({ [dpSet['label']]: `http://localhost:${sv_ops.port}/p/` })
-        p += 1000
-      } else {
-        console.log({ [dpSet['label']]: 'no Pleview' })
+          })
+          bs.create().init(sv_ops)
+          console.log({ [dpSet['label']]: `http://localhost:${sv_ops.port}/p/` })
+          p += 1000
+        } else {
+          console.log({ [dpSet['label']]: 'no Pleview' })
+        }
       }
+    } else {
+      this.previewServ(s, p + 1000)
     }
+
   }
 };
 
