@@ -108,9 +108,42 @@ new class {
       return [dp, dp.replace(ext, '.webp')]
     })()
 
-    if (format === 'png' && (this.set.override || !fs.existsSync(dp))) sharp(data).png({ compressionLevel: 9, progressive: true }).toFile(dp)
-    if (format === 'jpeg' && (this.set.override || !fs.existsSync(dp))) sharp(data).jpeg({ quality: 95, mozjpeg: true, progressive: true }).toFile(dp)
-    if (this.set.webp && (this.set.override || !fs.existsSync(dpWebp))) sharp(data).webp({ quality: 85 }).toFile(dpWebp)
+    if (format === 'png' && (this.set.override || !fs.existsSync(dp))) sharp(data).pipelineColourspace('srgb')
+      .png({
+        palette: true,
+        quality: 100,
+        compressionLevel: 9,
+        effort: 10,
+        dither: 1.0,
+        progressive: true
+      }).toFile(dp)
+    if (format === 'jpeg' && (this.set.override || !fs.existsSync(dp))) sharp(data)
+      // .flatten({ background: { r: 255, g: 255, b: 255 } }) // 透明部分対策、白で塗りつぶす
+      .pipelineColourspace('srgb')
+      .jpeg({
+        chromaSubsampling: '4:4:4',
+        trellisQuantisation: true,
+        overshootDeringing: true,
+        quality: 94,
+        mozjpeg: true,
+        progressive: true,
+        optimizeScans: true
+      })
+      .sharpen({
+        sigma: 0.5,
+        m1: 0,
+        m2: 10
+      })
+      .toFile(dp)
+    if (this.set.webp && (this.set.override || !fs.existsSync(dpWebp))) sharp(data).pipelineColourspace('srgb').webp({
+      quality: 85,
+      lossless: false,
+      nearLossless: false,
+      smartSubsampling: true,
+      effort: 6,
+      reductionEffort: 6
+    }).toFile(dpWebp)
+
   }
   run(Running) {
     const sharpRunning = sharp(Running.input)

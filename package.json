@@ -13,7 +13,8 @@
     "node": ">=24"
   },
   "bin": {
-    "build-tmpl": "./run/build-tmpl.js"
+    "build-tmpl": "./run/build-tmpl.js",
+    "media-comp": "./run/mediacomp.js"
   },
   "scripts": {
     "build-tmpl": "run-p build live",
