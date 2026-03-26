@@ -6,7 +6,8 @@ import net from 'net';
 import path from 'path'
 import bs from 'browser-sync'
 import { Worker } from 'node:worker_threads'
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'node:url'
+import stripJsonComments from 'strip-json-comments'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const defaultOps = _ => {
@@ -15,7 +16,7 @@ const defaultOps = _ => {
       "cfgJson": {
         "short": "c",
         "type": "string",
-        "default": "assets/config/build-tmpl.json"
+        "default": "assets/config/build-tmpl.jsonc"
       },
       "bldPath": {
         "short": "d",
@@ -50,7 +51,7 @@ const BLD = new class Builder {
   flugs = defaultOps()
   constructor(test = false) {
     this.setDemo(test)
-    const setJson = JSON.parse(fs.readFileSync(path.join(process.cwd(), this.flugs.cfgJson), 'utf-8'))
+    const setJson = JSON.parse(stripJsonComments(fs.readFileSync(path.join(process.cwd(), this.flugs.cfgJson), 'utf-8')))
     try {
       this.live = !!this.flugs.bldFile;
       this.buildFile = this.flugs.bldFile;
@@ -67,7 +68,7 @@ const BLD = new class Builder {
   }
   setDemo(test) {
     if (this.flugs.demo || test) {
-      this.flugs.cfgJson = path.normalize("assets@demo/config/build-tmpl.json")
+      this.flugs.cfgJson = path.normalize("assets@demo/config/build-tmpl.jsonc")
       this.flugs.bldPath = path.normalize("assets@demo/templates")
     }
   }
@@ -98,7 +99,7 @@ class Finarizer {
         }
       })
     } catch (_e) {
-      console.error({ method: 'assetImporter', mess: '[SKIP:ImportAssets]invalid importFile Settings,Check build-tmpl.json', _e }, dafaultCollor())
+      console.error({ method: 'assetImporter', mess: '[SKIP:ImportAssets]invalid importFile Settings,Check build-tmpl.jsonc', _e }, dafaultCollor())
     }
   }
   Asset(src, dest, recursive = false) {

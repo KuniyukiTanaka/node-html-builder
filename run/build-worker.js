@@ -10,7 +10,6 @@ import * as sass from 'sass'
 import { parse } from 'csv-parse/sync'
 import { createRequire } from 'module'
 import UglifyJS from 'uglify-js'
-import bs from 'browser-sync'
 import { parentPort, workerData } from 'node:worker_threads'
 
 const require = createRequire(import.meta.url);
@@ -39,8 +38,8 @@ const Filter = new class FwFilter {
   }
   testcase({ code, testcase }) {
     if (testcase) {
-      for (const { from, to } of testcase.filter(({ name }) => name ? 1 : 0)) {
-        code = code.replace(RegExp(from, 'g'), to)
+      for (const [from, to] of Object.entries(testcase)) {
+        code = code.replace(RegExp(from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), to)
       }
     }
     return code
@@ -193,7 +192,7 @@ const EXTRACT = new class eXtracter {
           start: dpSet['TemplatePreview.start'],
           siteReg
         },
-        log: [`[SKIP:Preview] TemplatePreview.start is invaild value. check build-tmpl.json`, _e]
+        log: [`[SKIP:Preview] TemplatePreview.start is invaild value. check build-tmpl.jsonc`, _e]
       })
       dpSet['TemplatePreview.start'] = null
       return null
@@ -237,7 +236,7 @@ const EXTRACT = new class eXtracter {
         code :
         ejs.render(
           basetmpl ?
-            fs.readFileSync(basetmpl).toString() :
+            fs.readFileSync(basetmpl).toString().replace('[[__TARGET__]]', code) :
             `<html lang="${new Intl.DateTimeFormat().resolvedOptions().locale}"><head>${cssList.map(css => `<link rel="stylesheet" href="/${css}.css">`).join('')}</head><body>${code}</body></html>`,
           { cssList, code },
           { views: this._ejsOpViews(), rmWhitespace: this.running.whiteSpaceFilter }
