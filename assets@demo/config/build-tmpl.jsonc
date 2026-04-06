@@ -2,8 +2,14 @@
   "buildList": [
     {
       "label": "Demo",
-      "whiteSpaceFilter":false,
+      "whiteSpaceFilter": false,
       "TemplatePreview.start": "assets@demo/templates/Demo/tmpl/ejs.ejs"
+    },
+    {
+      "label": "Demo2",
+      "whiteSpaceFilter": true,
+      "TemplatePreview.baseTmpl": "assets@demo/lib/baseTmpl.html"
+      // "TemplatePreview.start": "assets@demo/templates/Demo2/tmpl/ejs.ejs"
     }
   ]
 }

@@ -128,33 +128,28 @@ class Finarizer {
       cs.listen({ port, host: 'localhost', exclusive: true })
     })
   }
-  async previewServ(s = [], p = 1000) {
+  async previewServ(s = [], p = 2020) {
     if (!s.length) return
-    if (await this.checkPort(p)) {
-      for (const dpSet of s) {
-        if (Object.getPrototypeOf(dpSet['TemplatePreview.start'] || false) === String.prototype) {
-          const sv_ops = Object.assign({
-            host: "localhost",
-            watch: true,
-            open: false,
-            logLevel: "silent",
-            server: path.join(process.cwd(), 'html', dpSet['label']),
-            port: p,
-            listen: "localhost",
-            reloadDelay: 500,
-            ui: { port: p + 1 }
-          })
-          bs.create().init(sv_ops)
-          console.log({ [dpSet['label']]: `http://localhost:${sv_ops.port}/p/` })
-          p += 1000
-        } else {
-          console.log({ [dpSet['label']]: 'no Pleview' })
-        }
+    for (const dpSet of s) {
+      if (Object.getPrototypeOf(dpSet['TemplatePreview.start'] || false) === String.prototype && await this.checkPort(p)) {
+        const sv_ops = Object.assign({
+          host: "localhost",
+          watch: true,
+          open: false,
+          logLevel: "silent",
+          server: path.join(process.cwd(), 'html', dpSet['label']),
+          port: p,
+          listen: "localhost",
+          reloadDelay: 500,
+          ui: { port: p + 1 }
+        })
+        bs.create().init(sv_ops)
+        console.log({ [dpSet['label']]: `http://localhost:${sv_ops.port}/p/` })
+        p += 100
+      } else {
+        console.log({ [dpSet['label']]: 'no Pleview' })
       }
-    } else {
-      this.previewServ(s, p + 1000)
     }
-
   }
 };
 

@@ -81,7 +81,7 @@ const EXTRACT = new class eXtracter {
     },
     EJS: ({ input, deploySet, whiteSpaceFilter, name }) => {
       try {
-        const [code, practice] = this.CJS(
+        const [code, practice] = this._cjs(
           ejs.render(
             fs.readFileSync(input, 'utf-8').toString(),
             {},
@@ -164,7 +164,7 @@ const EXTRACT = new class eXtracter {
         path.format({ dir: (d => (fs.mkdirSync(d, { recursive: true }), d))(dir), name, ext }),
         code
       );
-      if (pData && pData.target === this.running.input) this.Preview(code, pData);
+      if (pData && pData.target === this.running.input) this.genPreview(code, pData);
     } catch (_e) {
       this._error({ method: `_output[__${method}__]`, log: _e })
       process.exit(1)
@@ -198,6 +198,12 @@ const EXTRACT = new class eXtracter {
       return null
     }
   }
+  _managePreviewTemplate(base, code, tag, conved = 0) {
+    const dafaltTag = `[[__${tag}__]]`
+    return fs.readFileSync(base).toString().replace(/\[\[__[a-zA-Z0-9_-]+?__]\]/g,
+      r => ((r !== dafaltTag && r.indexOf(this.running.name) > -1) ? (conved++, code) : r)
+    ).replace(dafaltTag, r => (conved ? r : code))
+  }
   _setRunning(fp) {
     const analyzed = path.parse(fp);
     const pathFilter = analyzed => {
@@ -213,7 +219,7 @@ const EXTRACT = new class eXtracter {
       deploySet: pathFilter(analyzed)
     }
   }
-  CJS(code) {
+  _cjs(code) {
     const excjs = (dd => fs.existsSync(dd) ? require(path.join(process.cwd(), dd)) : {})(this.running.input.replace(/\.ejs$/, '.cjs'))
     return [
       code.replace(
@@ -229,14 +235,14 @@ const EXTRACT = new class eXtracter {
       excjs.practice
     ]
   }
-  async Preview(code, { prebuild, target, basetmpl, practice, testcase, styles }) {
+  async genPreview(code, { prebuild, target, base, tag, practice, testcase, styles }) {
     const cssList = (getProtoName(styles) === 'String' ? [styles] : styles).map(c => path.parse(c).name)
     const previewHtml =
       (code.split('\n').filter((l, i) => i < 9 && l.match(/^[\s]*?<html.*?>/i)).length) ?
         code :
         ejs.render(
-          basetmpl ?
-            fs.readFileSync(basetmpl).toString().replace('[[__TARGET__]]', code) :
+          base ?
+            this._managePreviewTemplate(base, code, tag) :
             `<html lang="${new Intl.DateTimeFormat().resolvedOptions().locale}"><head>${cssList.map(css => `<link rel="stylesheet" href="/${css}.css">`).join('')}</head><body>${code}</body></html>`,
           { cssList, code },
           { views: this._ejsOpViews(), rmWhitespace: this.running.whiteSpaceFilter }
