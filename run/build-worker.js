@@ -173,13 +173,13 @@ const EXTRACT = new class eXtracter {
   _setPreview(dpSet, input, practice) {
     const siteReg = (root => path.normalize(path.join(root, dpSet['TemplatePreview.start'].replace(root, ''))))(path.join(BLD.source, dpSet['label']))
     try {
-      fs.statSync(siteReg)
       return (prebuild =>
         (prebuild) ?
           {
             prebuild,
             target: (prebuild && BLD.live) ? input : prebuild,
-            basetmpl: dpSet['TemplatePreview.baseTmpl'] ? path.normalize(dpSet['TemplatePreview.baseTmpl']) : '',
+            tag: dpSet['TemplatePreview.baseTag'] ? dpSet['TemplatePreview.baseTag'] : 'TARGET',
+            base: dpSet['TemplatePreview.baseTmpl'] ? path.normalize(dpSet['TemplatePreview.baseTmpl']) : '',
             styles: dpSet['TemplatePreview.styles'] || [],
             testcase: dpSet['TemplatePreview.testCase'] || null,
             practice: practice || null,
@@ -200,6 +200,7 @@ const EXTRACT = new class eXtracter {
   }
   _managePreviewTemplate(base, code, tag, conved = 0) {
     const dafaltTag = `[[__${tag}__]]`
+    console.log(dafaltTag)
     return fs.readFileSync(base).toString().replace(/\[\[__[a-zA-Z0-9_-]+?__]\]/g,
       r => ((r !== dafaltTag && r.indexOf(this.running.name) > -1) ? (conved++, code) : r)
     ).replace(dafaltTag, r => (conved ? r : code))
