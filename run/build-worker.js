@@ -200,7 +200,6 @@ const EXTRACT = new class eXtracter {
   }
   _managePreviewTemplate(base, code, tag, conved = 0) {
     const dafaltTag = `[[__${tag}__]]`
-    console.log(dafaltTag)
     return fs.readFileSync(base).toString().replace(/\[\[__[a-zA-Z0-9_-]+?__]\]/g,
       r => ((r !== dafaltTag && r.indexOf(this.running.name) > -1) ? (conved++, code) : r)
     ).replace(dafaltTag, r => (conved ? r : code))
