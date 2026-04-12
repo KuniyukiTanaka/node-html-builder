@@ -8,8 +8,9 @@
     {
       "label": "Demo2",
       "whiteSpaceFilter": true,
-      "TemplatePreview.baseTmpl": "assets@demo/lib/baseTmpl.html"
-      // "TemplatePreview.start": "assets@demo/templates/Demo2/tmpl/ejs.ejs"
+      "TemplatePreview.start": "assets@demo/templates/Demo2/tmpl/ejs.ejs",
+      "TemplatePreview.baseTmpl": "assets@demo/lib/baseTmpl.html",
+      "TemplatePreview.mode": 1
     }
   ]
 }

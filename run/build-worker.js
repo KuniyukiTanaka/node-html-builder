@@ -171,38 +171,59 @@ const EXTRACT = new class eXtracter {
     }
   }
   _setPreview(dpSet, input, practice) {
-    const siteReg = (root => path.normalize(path.join(root, dpSet['TemplatePreview.start'].replace(root, ''))))(path.join(BLD.source, dpSet['label']))
+    const siteReg = TPs => (root => path.normalize(path.join(root, TPs.replace(root, ''))))(path.join(BLD.source, dpSet['label']))
     try {
       return (prebuild =>
         (prebuild) ?
           {
             prebuild,
             target: (prebuild && BLD.live) ? input : prebuild,
-            tag: dpSet['TemplatePreview.baseTag'] ? dpSet['TemplatePreview.baseTag'] : 'TARGET',
+            tag: dpSet['TemplatePreview.targetTag'] ? path.normalize(dpSet['TemplatePreview.targetTag']) : 'TARGET',
             base: dpSet['TemplatePreview.baseTmpl'] ? path.normalize(dpSet['TemplatePreview.baseTmpl']) : '',
             styles: dpSet['TemplatePreview.styles'] || [],
             testcase: dpSet['TemplatePreview.testCase'] || null,
+            mode: dpSet['TemplatePreview.mode'] || 0,
             practice: practice || null,
           } : null
-      )(siteReg)
+      )(siteReg(dpSet['TemplatePreview.start']))
     } catch (_e) {
-      this._cation({
-        method: '_setPreview',
-        data: {
-          start: dpSet['TemplatePreview.start'],
-          siteReg
-        },
-        log: [`[SKIP:Preview] TemplatePreview.start is invaild value. check build-tmpl.jsonc`, _e]
-      })
+      if (dpSet['TemplatePreview.start']) {
+        this._cation({
+          method: '_setPreview',
+          data: {
+            start: dpSet['TemplatePreview.start'],
+            siteReg: dpSet['TemplatePreview.start'] ? siteReg(dpSet['TemplatePreview.start']) : undefined
+          },
+          log: [`[SKIP:Preview] TemplatePreview.start is invaild value. check build-tmpl.jsonc`, _e]
+        })
+      } else {
+        this._cation({
+          method: '_setPreview',
+          data: {
+            start: dpSet['TemplatePreview.start'],
+            // _e
+          },
+          log: [`[SKIP:Preview] TemplatePreview.start is Unset.`]
+        })
+      }
       dpSet['TemplatePreview.start'] = null
       return null
     }
   }
-  _managePreviewTemplate(base, code, tag, conved = 0) {
+  _managePreviewTemplate(base, code, tag, mode, conved = 0) {
     const dafaltTag = `[[__${tag}__]]`
-    return fs.readFileSync(base).toString().replace(/\[\[__[a-zA-Z0-9_-]+?__]\]/g,
-      r => ((r !== dafaltTag && r.indexOf(this.running.name) > -1) ? (conved++, code) : r)
-    ).replace(dafaltTag, r => (conved ? r : code))
+    if (mode === 1) {
+      const outputs = fs.globSync(`html/${this.running.deploySet.label}/*.html`)
+      return fs.readFileSync(base).toString()
+        .replace(/\[\[__([a-zA-Z0-9_-]+?)__]\]/g, (_, tagName) => {
+          const i = outputs.map(fp => path.basename(fp, '.html')).indexOf(tagName)
+          return (i + 1) ? fs.readFileSync(outputs[i]).toString() : ''
+        })
+    } else {
+      return fs.readFileSync(base).toString().replace(/\[\[__[a-zA-Z0-9_-]+?__]\]/g,
+        r => ((r !== dafaltTag && r.indexOf(this.running.name) > -1) ? (conved++, code) : r)
+      ).replace(dafaltTag, r => (conved ? r : code))
+    }
   }
   _setRunning(fp) {
     const analyzed = path.parse(fp);
@@ -213,10 +234,12 @@ const EXTRACT = new class eXtracter {
       }
       return olgn
     }
+    const deploySet = pathFilter(analyzed)
     this.running = {
       input: path.normalize(fp),
       ...analyzed,
-      deploySet: pathFilter(analyzed)
+      buildRoot: analyzed.dir.replace(new RegExp(`/${deploySet.label}/.+`), `/${deploySet.label}`),
+      deploySet
     }
   }
   _cjs(code) {
@@ -235,14 +258,14 @@ const EXTRACT = new class eXtracter {
       excjs.practice
     ]
   }
-  async genPreview(code, { prebuild, target, base, tag, practice, testcase, styles }) {
+  async genPreview(code, { prebuild, target, base, mode, tag, practice, testcase, styles }) {
     const cssList = (getProtoName(styles) === 'String' ? [styles] : styles).map(c => path.parse(c).name)
     const previewHtml =
       (code.split('\n').filter((l, i) => i < 9 && l.match(/^[\s]*?<html.*?>/i)).length) ?
         code :
         ejs.render(
           base ?
-            this._managePreviewTemplate(base, code, tag) :
+            this._managePreviewTemplate(base, code, tag, mode) :
             `<html lang="${new Intl.DateTimeFormat().resolvedOptions().locale}"><head>${cssList.map(css => `<link rel="stylesheet" href="/${css}.css">`).join('')}</head><body>${code}</body></html>`,
           { cssList, code },
           { views: this._ejsOpViews(), rmWhitespace: this.running.whiteSpaceFilter }
