@@ -10,7 +10,13 @@
       "whiteSpaceFilter": true,
       "TemplatePreview.start": "assets@demo/templates/Demo2/tmpl/ejs.ejs",
       "TemplatePreview.baseTmpl": "assets@demo/lib/baseTmpl.html",
-      "TemplatePreview.mode": 1
+      "TemplatePreview.mode": 1,
+      "TemplatePreview.testCase": [
+        {
+          "from": "〜FROM text〜",
+          "to": "TO テキスト"
+        }
+      ]
     }
   ]
 }

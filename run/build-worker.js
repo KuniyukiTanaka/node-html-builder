@@ -18,7 +18,24 @@ const interpretDirectScripts = ({ Sync, Loaded, option }) => {
   const r = Case(Sync) + Case(Loaded)
   return !option?.minify ? r.replace(/;/g, ';\n') : UglifyJS.minify(r).code
 }
-const { FILES, BLD, SET_NAME } = workerData
+const { FILES, BLD, SET_NAME } = workerData;
+const _skip = ({ method, log }) => {
+  console.error(
+    consoleCollor((l => [l, `Skiped:${method}()`, l].join('\n'))('='.repeat(100)), 1) + dafaultCollor()
+  )
+}
+const _cation = ({ method, log, data = undefined }) => {
+  console.error(
+    consoleCollor((l => [l, `Cation:${method}()`, l].join('\n'))('='.repeat(100)), 1) + dafaultCollor(),
+    { data, log }
+  )
+}
+const _error = ({ method, log, data = undefined }) => {
+  console.error(
+    consoleCollor((l => [l, `ERR:${method}()`, l].join('\n'))('='.repeat(100)), 2) + dafaultCollor(),
+    { data, running: this.running, log }
+  )
+}
 
 const Filter = new class FwFilter {
   preview = [this.practice, this.testcase]
@@ -37,9 +54,22 @@ const Filter = new class FwFilter {
     return code
   }
   testcase({ code, testcase }) {
-    if (testcase) {
-      for (const [from, to] of Object.entries(testcase)) {
-        code = code.replace(RegExp(from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), to)
+    if (getProtoName(testcase) === 'Array') {
+      try {
+        for (const { from, to } of testcase) {
+          code = code.replace(RegExp(from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), to)
+        }
+      } catch (_e) {
+        _cation({
+          data: {
+            "TemplatePreview.testCase": testcase
+          },
+          method: 'Preview->testcase',
+          log: [
+            '[SKIP] 異常なtestcase設定値、処理はスルーされました。',
+            '["TemplatePreview.testCase"]オプション は [{"from": "Target","to": "Replaced"}] の形で記述します。'
+          ]
+        })
       }
     }
     return code
@@ -139,6 +169,11 @@ const EXTRACT = new class eXtracter {
 
     }
   }
+  _skip({ method, log }) {
+    console.error(
+      consoleCollor((l => [l, `Skiped:eXtracter.${method}()`, l].join('\n'))('='.repeat(100)), 1) + dafaultCollor()
+    )
+  }
   _cation({ method, log, data = undefined }) {
     console.error(
       consoleCollor((l => [l, `Cation:eXtracter.${method}()`, l].join('\n'))('='.repeat(100)), 1) + dafaultCollor(),
@@ -181,7 +216,7 @@ const EXTRACT = new class eXtracter {
             tag: dpSet['TemplatePreview.targetTag'] ? path.normalize(dpSet['TemplatePreview.targetTag']) : 'TARGET',
             base: dpSet['TemplatePreview.baseTmpl'] ? path.normalize(dpSet['TemplatePreview.baseTmpl']) : '',
             styles: dpSet['TemplatePreview.styles'] || [],
-            testcase: dpSet['TemplatePreview.testCase'] || null,
+            testcase: dpSet['TemplatePreview.testCase'] || [],
             mode: dpSet['TemplatePreview.mode'] || 0,
             practice: practice || null,
           } : null
@@ -195,15 +230,6 @@ const EXTRACT = new class eXtracter {
             siteReg: dpSet['TemplatePreview.start'] ? siteReg(dpSet['TemplatePreview.start']) : undefined
           },
           log: [`[SKIP:Preview] TemplatePreview.start is invaild value. check build-tmpl.jsonc`, _e]
-        })
-      } else {
-        this._cation({
-          method: '_setPreview',
-          data: {
-            start: dpSet['TemplatePreview.start'],
-            // _e
-          },
-          log: [`[SKIP:Preview] TemplatePreview.start is Unset.`]
         })
       }
       dpSet['TemplatePreview.start'] = null
@@ -272,7 +298,7 @@ const EXTRACT = new class eXtracter {
         );
 
     this._output({
-      method: 'Preview',
+      method: 'genPreview',
       name: 'index',
       dir: path.join('html', this.running.deploySet['label'], 'p'),
       ext: '.html',

@@ -93,7 +93,7 @@ class Finarizer {
         if (getProtoName(dpSet['importAssets']) === 'Object') {
           for (const [dp, e] of Object.entries(dpSet['importAssets'])) {
             for (const src of e.split('|')) {
-              this.Asset(path.normalize(src), path.join('html', dpSet['label'], dp), dpSet['importAssets.recursive'])
+              this._asset(path.normalize(src), path.join('html', dpSet['label'], dp), dpSet['importAssets.recursive'])
             }
           }
         }
@@ -102,36 +102,13 @@ class Finarizer {
       console.error({ method: 'assetImporter', mess: '[SKIP:ImportAssets]invalid importFile Settings,Check build-tmpl.jsonc', _e }, dafaultCollor())
     }
   }
-  Asset(src, dest, recursive = false) {
-    const p = fs.statSync(src)
-    if (p.isDirectory()) {
-      const subDir = fs.readdirSync(src, { withFileTypes: true }).filter(d => d.isFile() || recursive)
-      for (const dirent of subDir) {
-        this.Asset(path.join(src, dirent.name), path.join(dest, dirent.name))
-      }
-    } else {
-      if (src.match(`${path.sep}[.]`)) {
-        console.log([`importThrow:: ${src}`])
-        if (src.endsWith('.DS_Store')) fs.unlink(src, _e => { console.error([_e ? `ERR:notDeleted:: ${src}` : `Deleted:: ${src}`], dafaultCollor()) })
-        return
-      }
-      const [parents, fileName] = path.extname(dest) ? [path.dirname(dest), ''] : [dest, path.basename(src)];
-      fs.mkdirSync(parents, { recursive: true });
-      fs.copyFileSync(src, path.join(dest, fileName))
-    }
-  }
-  checkPort(port) {
-    return new Promise((resolve) => {
-      const cs = net.createServer();
-      cs.once('error', _ => resolve(false))
-      cs.once('listening', _ => { cs.close(_ => resolve(true)) })
-      cs.listen({ port, host: 'localhost', exclusive: true })
-    })
-  }
   async previewServ(s = [], p = 2020) {
-    if (!s.length) return
+    if (! await this._chkPort(p)) {
+      this.previewServ(s, p + 100)
+      return null
+    }
     for (const dpSet of s) {
-      if (Object.getPrototypeOf(dpSet['TemplatePreview.start'] || false) === String.prototype && await this.checkPort(p)) {
+      if (Object.getPrototypeOf(dpSet['TemplatePreview.start'] || false) === String.prototype) {
         const sv_ops = Object.assign({
           host: "localhost",
           watch: true,
@@ -151,9 +128,35 @@ class Finarizer {
       }
     }
   }
+  _asset(src, dest, recursive = false) {
+    const p = fs.statSync(src)
+    if (p.isDirectory()) {
+      const subDir = fs.readdirSync(src, { withFileTypes: true }).filter(d => d.isFile() || recursive)
+      for (const dirent of subDir) {
+        this._asset(path.join(src, dirent.name), path.join(dest, dirent.name))
+      }
+    } else {
+      if (src.match(`${path.sep}[.]`)) {
+        console.log([`importThrow:: ${src}`])
+        if (src.endsWith('.DS_Store')) fs.unlink(src, _e => { console.error([_e ? `ERR:notDeleted:: ${src}` : `Deleted:: ${src}`], dafaultCollor()) })
+        return
+      }
+      const [parents, fileName] = path.extname(dest) ? [path.dirname(dest), ''] : [dest, path.basename(src)];
+      fs.mkdirSync(parents, { recursive: true });
+      fs.copyFileSync(src, path.join(dest, fileName))
+    }
+  }
+  _chkPort(port) {
+    return new Promise((resolve) => {
+      const cs = net.createServer();
+      cs.once('error', _ => resolve(false))
+      cs.once('listening', _ => { cs.close(_ => resolve(true)) })
+      cs.listen({ port, host: 'localhost', exclusive: true })
+    })
+  }
 };
 
-((r = null) => {
+( (r = null) => {
   for (const dpSet of BLD.live ? [''] : BLD.site) {
     const FILES = BLD.buildFile || fs.globSync(path.join(BLD.source, dpSet['label'], '+(tmpl|scss)/**/*.*'), { exclude: BLD.exclude }).sort(f => path.extname(f) === '.scss' ? -1 : 1)
     r = new Worker(
@@ -162,18 +165,9 @@ class Finarizer {
         type: 'module',
         // stdout: true,
         // stderr: true,
-        workerData: {
-          BLD,
-          FILES,
-          SET_NAME: dpSet['label']
-        }
+        workerData: { BLD, FILES, SET_NAME: dpSet['label'] }
       }
     )
   }
-  if (r) {
-    r.once('message', ({ FILES }) => {
-      if (getProtoName(FILES) === 'Array') new Finarizer()
-    })
-  }
-}
-)()
+  if (r) r.once('message', ({ FILES }) => (getProtoName(FILES) !== 'Array') || new Finarizer())
+})()
