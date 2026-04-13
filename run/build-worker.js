@@ -38,7 +38,7 @@ const _error = ({ method, log, data = undefined }) => {
 }
 
 const Filter = new class PvFilter {
-  preview = [this.practice, this.testcase,this.styles]
+  preview = [this.practice, this.testcase, this.styles]
   Hook = {
     preview: (data, methods = []) => {
       if (getProtoName(methods) === 'String') {
@@ -54,23 +54,21 @@ const Filter = new class PvFilter {
     return code
   }
   testcase({ code, testcase }) {
-    if (getProtoName(testcase) === 'Array') {
-      try {
-        for (const { from, to } of testcase) {
-          code = code.replace(RegExp(from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), to)
-        }
-      } catch (_e) {
-        _cation({
-          data: {
-            "TemplatePreview.testCase": testcase
-          },
-          method: 'PvFilter->testcase',
-          log: [
-            '[SKIP] 異常なtestcase設定値、処理はスルーされました。',
-            '["TemplatePreview.testCase"]オプション は [{"from": "Target","to": "Replaced"}] の形で記述します。'
-          ]
-        })
+    try {
+      for (const [from,to] of Object.entries(testcase)) {
+        code = code.replace(RegExp(from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), to)
       }
+    } catch (_e) {
+      _cation({
+        data: {
+          "TemplatePreview.testCase": testcase
+        },
+        method: 'PvFilter->testcase',
+        log: [
+          '[SKIP] 異常なtestcase設定値、処理はスルーされました。',
+          '["TemplatePreview.testCase"]オプション は {"from-1":"to-1","from-2":"to-2",...} の形で記述します。'
+        ]
+      })
     }
     return code
   }
@@ -165,9 +163,10 @@ const EXTRACT = new class eXtracter {
       try {
         (({ cssMinify, sass }) => {
           const pligins = [autoprefixer({ remove: false }), cssGap, cssMinify].filter(p => !!p)
+          const { buildRoot, dir, } = this.running
           this._output({
             method: 'CSS',
-            name,
+            name: [...path.relative(buildRoot + '/scss', dir).split(path.sep), name].join('--'),
             dir: path.join('html', deploySet['label']),
             ext: '.css',
             code: postcss(pligins).process(sass).css.replace('@charset "UTF-8";', '').trim()
@@ -282,7 +281,7 @@ const EXTRACT = new class eXtracter {
     this.running = {
       input: path.normalize(fp),
       ...analyzed,
-      buildRoot: analyzed.dir.replace(new RegExp(`/${deploySet.label}/.+`), `/${deploySet.label}`),
+      buildRoot: path.join(BLD.source, deploySet['label']),
       deploySet
     }
   }
