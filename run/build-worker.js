@@ -37,8 +37,8 @@ const _error = ({ method, log, data = undefined }) => {
   )
 }
 
-const Filter = new class FwFilter {
-  preview = [this.practice, this.testcase]
+const Filter = new class PvFilter {
+  preview = [this.practice, this.testcase,this.styles]
   Hook = {
     preview: (data, methods = []) => {
       if (getProtoName(methods) === 'String') {
@@ -64,13 +64,31 @@ const Filter = new class FwFilter {
           data: {
             "TemplatePreview.testCase": testcase
           },
-          method: 'Preview->testcase',
+          method: 'PvFilter->testcase',
           log: [
             '[SKIP] 異常なtestcase設定値、処理はスルーされました。',
             '["TemplatePreview.testCase"]オプション は [{"from": "Target","to": "Replaced"}] の形で記述します。'
           ]
         })
       }
+    }
+    return code
+  }
+  styles({ code, styles }) {
+    try {
+      const cssList = (getProtoName(styles) === 'String' ? [styles] : styles).map(c => path.parse(c).name)
+      code = code.replace('</body>', _ => `${cssList.map(css => `<link rel="stylesheet" href="/${css}.css">`).join('')}</body>`)
+    } catch (_e) {
+      _cation({
+        data: {
+          "TemplatePreview.styles": styles
+        },
+        method: 'PvFilter->styles',
+        log: [
+          '[SKIP] 異常なstyles設定値、処理はスルーされました。',
+          '["TemplatePreview.styles"]オプション は Array["String"] の形で記述します。'
+        ]
+      })
     }
     return code
   }
@@ -285,15 +303,12 @@ const EXTRACT = new class eXtracter {
     ]
   }
   async genPreview(code, { prebuild, target, base, mode, tag, practice, testcase, styles }) {
-    const cssList = (getProtoName(styles) === 'String' ? [styles] : styles).map(c => path.parse(c).name)
     const previewHtml =
       (code.split('\n').filter((l, i) => i < 9 && l.match(/^[\s]*?<html.*?>/i)).length) ?
         code :
         ejs.render(
-          base ?
-            this._managePreviewTemplate(base, code, tag, mode) :
-            `<html lang="${new Intl.DateTimeFormat().resolvedOptions().locale}"><head>${cssList.map(css => `<link rel="stylesheet" href="/${css}.css">`).join('')}</head><body>${code}</body></html>`,
-          { cssList, code },
+          base ? this._managePreviewTemplate(base, code, tag, mode) : `<html lang="${new Intl.DateTimeFormat().resolvedOptions().locale}"><head></head><body>${code}</body></html>`,
+          { code },
           { views: this._ejsOpViews(), rmWhitespace: this.running.whiteSpaceFilter }
         );
 
@@ -302,7 +317,7 @@ const EXTRACT = new class eXtracter {
       name: 'index',
       dir: path.join('html', this.running.deploySet['label'], 'p'),
       ext: '.html',
-      code: Filter.Hook.preview({ code: previewHtml, practice, testcase }, 'all')
+      code: Filter.Hook.preview({ code: previewHtml, practice, testcase, styles }, 'all')
     })
   }
 }

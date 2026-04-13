@@ -3,7 +3,8 @@
     {
       "label": "Demo",
       "whiteSpaceFilter": false,
-      "TemplatePreview.start": "assets@demo/templates/Demo/tmpl/ejs.ejs"
+      "TemplatePreview.start": "assets@demo/templates/Demo/tmpl/ejs.ejs",
+      "TemplatePreview.styles": "index.css"
     },
     {
       "label": "Demo2",
