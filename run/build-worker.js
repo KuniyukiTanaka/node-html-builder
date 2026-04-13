@@ -55,8 +55,8 @@ const Filter = new class PvFilter {
   }
   testcase({ code, testcase }) {
     try {
-      for (const [from,to] of Object.entries(testcase)) {
-        code = code.replace(RegExp(from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), to)
+      for (const [from, to] of Object.entries(testcase)) {
+        code = code.replace(RegExp(from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), to.toString())
       }
     } catch (_e) {
       _cation({
@@ -66,7 +66,7 @@ const Filter = new class PvFilter {
         method: 'PvFilter->testcase',
         log: [
           '[SKIP] 異常なtestcase設定値、処理はスルーされました。',
-          '["TemplatePreview.testCase"]オプション は {"from-1":"to-1","from-2":"to-2",...} の形で記述します。'
+          '["TemplatePreview.testCase"]オプション は Object:{"from_1":"to_1","from_2":"to_2",...} の形で記述します。'
         ]
       })
     }
@@ -162,14 +162,14 @@ const EXTRACT = new class eXtracter {
       const root_tag = 'root@'
       try {
         (({ cssMinify, sass }) => {
-          const pligins = [autoprefixer({ remove: false }), cssGap, cssMinify].filter(p => !!p)
+          const postPlugins = [autoprefixer({ remove: false }), cssGap, cssMinify].filter(p => !!p)
           const { buildRoot, dir, } = this.running
           this._output({
             method: 'CSS',
-            name: [...path.relative(buildRoot + '/scss', dir).split(path.sep), name].join('--'),
+            name: (d => (d = d ? [...d.split(path.sep), name].join('--') : name))(path.relative(buildRoot + '/scss', dir)),
             dir: path.join('html', deploySet['label']),
             ext: '.css',
-            code: postcss(pligins).process(sass).css.replace('@charset "UTF-8";', '').trim()
+            code: postcss(postPlugins).process(sass).css.replace('@charset "UTF-8";', '').trim()
           })
         })({
           cssMinify: whiteSpaceFilter ? cssMinify : null,

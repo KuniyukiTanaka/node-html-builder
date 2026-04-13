@@ -12,14 +12,11 @@
       "TemplatePreview.start": "assets@demo/templates/Demo2/tmpl/ejs.ejs",
       "TemplatePreview.baseTmpl": "assets@demo/lib/baseTmpl.html",
       "TemplatePreview.mode": 1,
-      "TemplatePreview.testCase": [
+      "TemplatePreview.testCase": 
         {
-          "from-1":"to-1"
-        },
-        {
+          "from-1":"to-1",
           "from-2":"to-2"
         }
-      ]
     }
   ]
 }
