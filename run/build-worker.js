@@ -188,18 +188,18 @@ const EXTRACT = new class eXtracter {
   }
   _skip({ method, log }) {
     console.error(
-      consoleCollor((l => [l, `Skiped:eXtracter.${method}()`, l].join('\n'))('='.repeat(100)), 1) + dafaultCollor()
+      consoleCollor((l => [l, `[SKIP]eXtracter->${method}()`, l].join('\n'))('='.repeat(100)), 1) + dafaultCollor()
     )
   }
   _cation({ method, log, data = undefined }) {
     console.error(
-      consoleCollor((l => [l, `Cation:eXtracter.${method}()`, l].join('\n'))('='.repeat(100)), 1) + dafaultCollor(),
+      consoleCollor((l => [l, `[cation]eXtracter->${method}()`, l].join('\n'))('='.repeat(100)), 1) + dafaultCollor(),
       { data, log }
     )
   }
   _error({ method, log, data = undefined }) {
     console.error(
-      consoleCollor((l => [l, `ERR:eXtracter.${method}()`, l].join('\n'))('='.repeat(100)), 2) + dafaultCollor(),
+      consoleCollor((l => [l, `[ERR]eXtracter->${method}()`, l].join('\n'))('='.repeat(100)), 2) + dafaultCollor(),
       { data, running: this.running, log }
     )
   }
@@ -246,7 +246,7 @@ const EXTRACT = new class eXtracter {
             start: dpSet['TemplatePreview.start'],
             siteReg: dpSet['TemplatePreview.start'] ? siteReg(dpSet['TemplatePreview.start']) : undefined
           },
-          log: [`[SKIP:Preview] TemplatePreview.start is invaild value. check build-tmpl.jsonc`, _e]
+          log: [`[SKIP] TemplatePreview.start is invaild value. check build-tmpl.jsonc`, _e]
         })
       }
       dpSet['TemplatePreview.start'] = null

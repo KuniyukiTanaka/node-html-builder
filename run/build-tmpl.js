@@ -82,6 +82,27 @@ const BLD = new class Builder {
   }
 }
 
+const messege = {
+  _skip: mess => {
+    console.error(
+      consoleCollor((l => [l, `[SKIP]${mess.method}()`, l].join('\n'))('='.repeat(100)), 1) + dafaultCollor() + "\n",
+      { ...mess }
+    )
+  },
+  _cation: mess => {
+    console.error(
+      consoleCollor((l => [l, `[cation]${mess.method}()`, l].join('\n'))('='.repeat(100)), 1) + dafaultCollor() + "\n",
+      { ...mess }
+    )
+  },
+  _error: mess => {
+    console.error(
+      consoleCollor((l => [l, `[Error]${mess.method}()`, l].join('\n'))('='.repeat(100)), 2) + dafaultCollor() + "\n",
+      { ...mess }
+    )
+  }
+}
+
 class Finarizer {
   constructor() {
     this.Import()
@@ -91,15 +112,15 @@ class Finarizer {
     try {
       BLD.site.map(dpSet => {
         if (getProtoName(dpSet['importAssets']) === 'Object') {
-          for (const [dp, e] of Object.entries(dpSet['importAssets'])) {
-            for (const src of e.split('|')) {
-              this._asset(path.normalize(src), path.join('html', dpSet['label'], dp), dpSet['importAssets.recursive'])
+          for (const [from, to] of Object.entries(dpSet['importAssets'])) {
+            for (const src of from.split('|')) {
+              this._asset(src, path.join('html', dpSet['label'], to), dpSet['importAssets.recursive'])
             }
           }
         }
       })
     } catch (_e) {
-      console.error({ method: 'assetImporter', mess: '[SKIP:ImportAssets]invalid importFile Settings,Check build-tmpl.jsonc', _e }, dafaultCollor())
+      messege._skip({ method: 'Finarizer.Import', log: '[importAssets] invalid importFile Settings,Check build-tmpl.jsonc', _e })
     }
   }
   async previewServ(s = [], p = 2020) {
@@ -129,7 +150,7 @@ class Finarizer {
     }
   }
   _asset(src, dest, recursive = false) {
-    const p = fs.statSync(src)
+    const p = fs.statSync(path.normalize(src))
     if (p.isDirectory()) {
       const subDir = fs.readdirSync(src, { withFileTypes: true }).filter(d => d.isFile() || recursive)
       for (const dirent of subDir) {
@@ -156,7 +177,7 @@ class Finarizer {
   }
 };
 
-( (r = null) => {
+((r = null) => {
   for (const dpSet of BLD.live ? [''] : BLD.site) {
     const FILES = BLD.buildFile || fs.globSync(path.join(BLD.source, dpSet['label'], '+(tmpl|scss)/**/*.*'), { exclude: BLD.exclude }).sort(f => path.extname(f) === '.scss' ? -1 : 1)
     r = new Worker(
