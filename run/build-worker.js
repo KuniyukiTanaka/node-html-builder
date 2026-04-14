@@ -125,7 +125,7 @@ const EXTRACT = new class eXtracter {
         this._error({ method: 'Throw', log: _e })
       }
     },
-    EJS: ({ input, deploySet, whiteSpaceFilter, name }) => {
+    EJS: ({ input, deploySet, deploySet: { whiteSpaceFilter }, name }) => {
       try {
         const [code, practice] = this._cjs(
           ejs.render(
@@ -158,12 +158,12 @@ const EXTRACT = new class eXtracter {
         this.builder.EJS(this.running)
       }
     },
-    CSS: ({ input, deploySet, name, whiteSpaceFilter }) => {
+    CSS: ({ input, deploySet, name, deploySet:{ whiteSpaceFilter} }) => {
       const root_tag = 'root@'
       try {
         (({ cssMinify, sass }) => {
           const postPlugins = [autoprefixer({ remove: false }), cssGap, cssMinify].filter(p => !!p)
-          const { buildRoot, dir, } = this.running
+          const { buildRoot, dir } = this.running
           this._output({
             method: 'CSS',
             name: (d => (d = d ? [...d.split(path.sep), name].join('--') : name))(path.relative(buildRoot + '/scss', dir)),
@@ -308,7 +308,7 @@ const EXTRACT = new class eXtracter {
         ejs.render(
           base ? this._managePreviewTemplate(base, code, tag, mode) : `<html lang="${new Intl.DateTimeFormat().resolvedOptions().locale}"><head></head><body>${code}</body></html>`,
           { code },
-          { views: this._ejsOpViews(), rmWhitespace: this.running.whiteSpaceFilter }
+          { views: this._ejsOpViews(), rmWhitespace: this.running.deploySet.whiteSpaceFilter }
         );
 
     this._output({
