@@ -1,4 +1,5 @@
 import { consoleCollor, dafaultCollor, getProtoName } from '../lib/filter.mjs'
+import { _skip, _cation, _error } from '../lib/consoles.mjs'
 import fs from 'fs'
 import path from 'path'
 import ejs from 'ejs'
@@ -12,31 +13,13 @@ import { createRequire } from 'module'
 import UglifyJS from 'uglify-js'
 import { parentPort, workerData } from 'node:worker_threads'
 
-const require = createRequire(import.meta.url);
-const interpretDirectScripts = ({ Sync, Loaded, option }) => {
+const require = createRequire(import.meta.url)
+const { FILES, BLD, SET_NAME } = workerData
+const composeDirectScripts = ({ Sync, Loaded, option }) => {
   const Case = (s = []) => s.map(c => `(_=>{\n${(getProtoName(c) === 'String') ? fs.readFileSync(c) : c.toString().replace(/[^{}]+?{([\S\s]+)}$/, '$1')}\n})();`).join('')
   const r = Case(Sync) + Case(Loaded)
   return !option?.minify ? r.replace(/;/g, ';\n') : UglifyJS.minify(r).code
 }
-const { FILES, BLD, SET_NAME } = workerData;
-const _skip = ({ method, log }) => {
-  console.error(
-    consoleCollor((l => [l, `Skiped:${method}()`, l].join('\n'))('='.repeat(100)), 1) + dafaultCollor()
-  )
-}
-const _cation = ({ method, log, data = undefined }) => {
-  console.error(
-    consoleCollor((l => [l, `Cation:${method}()`, l].join('\n'))('='.repeat(100)), 1) + dafaultCollor(),
-    { data, log }
-  )
-}
-const _error = ({ method, log, data = undefined }) => {
-  console.error(
-    consoleCollor((l => [l, `ERR:${method}()`, l].join('\n'))('='.repeat(100)), 2) + dafaultCollor(),
-    { data, running: this.running, log }
-  )
-}
-
 const Filter = new class PvFilter {
   preview = [this.practice, this.testcase, this.styles]
   Hook = {
@@ -158,7 +141,7 @@ const EXTRACT = new class eXtracter {
         this.builder.EJS(this.running)
       }
     },
-    CSS: ({ input, deploySet, name, deploySet:{ whiteSpaceFilter} }) => {
+    CSS: ({ input, deploySet, name, deploySet: { whiteSpaceFilter } }) => {
       const root_tag = 'root@'
       try {
         (({ cssMinify, sass }) => {
@@ -215,8 +198,8 @@ const EXTRACT = new class eXtracter {
       fs.writeFileSync(
         path.format({ dir: (d => (fs.mkdirSync(d, { recursive: true }), d))(dir), name, ext }),
         code
-      );
-      if (pData && pData.target === this.running.input) this.genPreview(code, pData);
+      )
+      if (pData && pData.target === this.running.input) this.genPreview(code, pData)
     } catch (_e) {
       this._error({ method: `_output[__${method}__]`, log: _e })
       process.exit(1)
@@ -246,14 +229,14 @@ const EXTRACT = new class eXtracter {
             start: dpSet['TemplatePreview.start'],
             siteReg: dpSet['TemplatePreview.start'] ? siteReg(dpSet['TemplatePreview.start']) : undefined
           },
-          log: [`[SKIP] TemplatePreview.start is invaild value. check build-tmpl.jsonc`, _e]
+          log: [`[SKIP:Preview] TemplatePreview.start is invaild value. check build-tmpl.jsonc`, _e]
         })
       }
       dpSet['TemplatePreview.start'] = null
       return null
     }
   }
-  _managePreviewTemplate(base, code, tag, mode, conved = 0) {
+  _managePreviewTemplate(base, code, tag, mode = 0, conved = 0) {
     const dafaltTag = `[[__${tag}__]]`
     if (mode === 1) {
       const outputs = fs.globSync(`html/${this.running.deploySet.label}/*.html`)
@@ -269,7 +252,7 @@ const EXTRACT = new class eXtracter {
     }
   }
   _setRunning(fp) {
-    const analyzed = path.parse(fp);
+    const analyzed = path.parse(fp)
     const pathFilter = analyzed => {
       const olgn = BLD.site.find(dpSet => analyzed.dir.indexOf(path.join(path.sep, dpSet['label'], path.sep)) > 1)
       if (olgn['TemplatePreview.start']) {
@@ -296,12 +279,13 @@ const EXTRACT = new class eXtracter {
               excjs[runas]({ code: code.rmWhiteSpace().replace(/> </g, '><').split(/<hr[\s]+?type="template-slit"[^<>]*?>/), mod: { fs, csv: parse, worker: this.worker } }) : ''
           )(attr.json2JS().script)
       )
-        .replace('((__directScripts__))', _ => interpretDirectScripts(excjs.DirectScripts || { Sync: undefined, Loaded: undefined, option: undefined }))
+        .replace('((__directScripts__))', _ => composeDirectScripts(excjs.DirectScripts || { Sync: undefined, Loaded: undefined, option: undefined }))
       ,
       excjs.practice
     ]
   }
-  async genPreview(code, { prebuild, target, base, mode, tag, practice, testcase, styles }) {
+  async genPreview(code, previewRunning) {
+    const { prebuild, target, base, mode, tag, practice, testcase, styles } = previewRunning
     const previewHtml =
       (code.split('\n').filter((l, i) => i < 9 && l.match(/^[\s]*?<html.*?>/i)).length) ?
         code :
@@ -309,7 +293,7 @@ const EXTRACT = new class eXtracter {
           base ? this._managePreviewTemplate(base, code, tag, mode) : `<html lang="${new Intl.DateTimeFormat().resolvedOptions().locale}"><head></head><body>${code}</body></html>`,
           { code },
           { views: this._ejsOpViews(), rmWhitespace: this.running.deploySet.whiteSpaceFilter }
-        );
+        )
 
     this._output({
       method: 'genPreview',

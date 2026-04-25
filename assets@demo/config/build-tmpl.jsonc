@@ -2,21 +2,40 @@
   "buildList": [
     {
       "label": "Demo",
+      // label: 出力に必須。`assets/templates` 以下に同名ディレクトリが必要
+      // === 出力ファイル設定 ===
       "whiteSpaceFilter": false,
-      "TemplatePreview.start": "assets@demo/templates/Demo/tmpl/ejs.ejs",
+      "outputSub": 0,
+      // whiteSpaceFilter: 出力ファイルの空白文字を除去する
+      // outputSub: サブディレクトリ処理、 importAssets オプションには影響しない
+      //   0: なし（デフォルト）
+      //   1: ファイル名に前方追記
+      //   2: アセットディレクトリ内の構成を維持
+
+      // === アセットのインポート設定 ===
+      "importAssets": {},
+      "importAssets.recursive": false,
+      // 例文:
+      // "lib": "lib"          → libディレクトリを {出力先}/lib にインポート
+      // "lib/file.md": "md.md" → lib/file.md を {出力先}/md.md にインポート
+      // キー: 入力ファイル/ディレクトリパス（プロジェクトルートから指定）
+      // 値: インポート先のサブパス（改名可能）
+      // importAssets.recursive: ディレクトリ指定時、指定ディレクトリ以下を再帰的にインポート
+
+      // === ビルドプレビュー設定 ===
+      "TemplatePreview.start": "assets@demo/templates/Demo/tmpl/ejs.html",
       "TemplatePreview.styles": "index.css"
     },
-    {
-      "label": "Demo2",
+    { /* === Demo2 ビルド設定（非出力） === */
+      // "label": "Demo2",
       "whiteSpaceFilter": true,
       "TemplatePreview.start": "assets@demo/templates/Demo2/tmpl/ejs.ejs",
       "TemplatePreview.baseTmpl": "assets@demo/lib/baseTmpl.html",
       "TemplatePreview.mode": 1,
-      "TemplatePreview.testCase": 
-        {
-          "from-1":"to-1",
-          "from-2":"to-2"
-        }
+      "TemplatePreview.testCase": {
+        "from-1": "to-1",
+        "from-2": "to-2"
+      }
     }
   ]
 }

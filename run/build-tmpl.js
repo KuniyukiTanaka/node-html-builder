@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { consoleCollor, dafaultCollor, getProtoName } from '../lib/filter.mjs'
+import { _skip, _cation, _error } from '../lib/consoles.mjs'
 import { parseArgs } from 'node:util'
 import fs from 'fs'
-import net from 'net';
+import net from 'net'
 import path from 'path'
 import bs from 'browser-sync'
 import { Worker } from 'node:worker_threads'
@@ -39,7 +40,7 @@ const defaultOps = _ => {
         "default": false
       }
     }
-  }).values;
+  }).values
   for (const [k, v] of Object.entries(flugs)) {
     if (!!v && typeof v === 'string') {
       flugs[k] = path.normalize(v)
@@ -47,14 +48,15 @@ const defaultOps = _ => {
   }
   return flugs
 }
+
 const BLD = new class Builder {
   flugs = defaultOps()
   constructor(test = false) {
     this.setDemo(test)
     const setJson = JSON.parse(stripJsonComments(fs.readFileSync(path.join(process.cwd(), this.flugs.cfgJson), 'utf-8')))
     try {
-      this.live = !!this.flugs.bldFile;
-      this.buildFile = this.flugs.bldFile;
+      this.live = !!this.flugs.bldFile
+      this.buildFile = this.flugs.bldFile
       this.source = setJson['source'] || this.flugs.bldPath
       this.exclude = this.flugs.exclude.split(',').map(e => e.trim())
       this.setSite(this.flugs.bldFile, setJson['buildList'])
@@ -82,45 +84,20 @@ const BLD = new class Builder {
   }
 }
 
-const messege = {
-  _skip: mess => {
-    console.error(
-      consoleCollor((l => [l, `[SKIP]${mess.method}()`, l].join('\n'))('='.repeat(100)), 1) + dafaultCollor() + "\n",
-      { ...mess }
-    )
-  },
-  _cation: mess => {
-    console.error(
-      consoleCollor((l => [l, `[cation]${mess.method}()`, l].join('\n'))('='.repeat(100)), 1) + dafaultCollor() + "\n",
-      { ...mess }
-    )
-  },
-  _error: mess => {
-    console.error(
-      consoleCollor((l => [l, `[Error]${mess.method}()`, l].join('\n'))('='.repeat(100)), 2) + dafaultCollor() + "\n",
-      { ...mess }
-    )
-  }
-}
-
 class Finarizer {
   constructor() {
     this.Import()
     this.previewServ(BLD.site)
   }
   Import(_) {
+    let from, to
     try {
       BLD.site.map(dpSet => {
-        if (getProtoName(dpSet['importAssets']) === 'Object') {
-          for (const [from, to] of Object.entries(dpSet['importAssets'])) {
-            for (const src of from.split('|')) {
-              this._asset(src, path.join('html', dpSet['label'], to), dpSet['importAssets.recursive'])
-            }
-          }
-        }
+        if (getProtoName(dpSet['importAssets']) !== 'Object') throw 'Invalid input Type:importAssets'
+        for ([from, to] of Object.entries(dpSet['importAssets'])) this._asset(path.normalize(from), path.join('html', dpSet['label'], to), !!dpSet['importAssets.recursive'])
       })
     } catch (_e) {
-      messege._skip({ method: 'Finarizer.Import', log: '[importAssets] invalid importFile Settings,Check build-tmpl.jsonc', _e })
+      _skip({ method: 'Finarizer.Import', input: { from, to }, log: '[importAssets] invalid importFile Settings,Check build-tmpl.jsonc', _e })
     }
   }
   async previewServ(s = [], p = 2020) {
@@ -149,12 +126,12 @@ class Finarizer {
       }
     }
   }
-  _asset(src, dest, recursive = false) {
+  _asset(src, dp, recursive = false) {
     const p = fs.statSync(path.normalize(src))
     if (p.isDirectory()) {
       const subDir = fs.readdirSync(src, { withFileTypes: true }).filter(d => d.isFile() || recursive)
       for (const dirent of subDir) {
-        this._asset(path.join(src, dirent.name), path.join(dest, dirent.name))
+        this._asset(path.join(src, dirent.name), path.join(dp, dirent.name))
       }
     } else {
       if (src.match(`${path.sep}[.]`)) {
@@ -162,20 +139,20 @@ class Finarizer {
         if (src.endsWith('.DS_Store')) fs.unlink(src, _e => { console.error([_e ? `ERR:notDeleted:: ${src}` : `Deleted:: ${src}`], dafaultCollor()) })
         return
       }
-      const [parents, fileName] = path.extname(dest) ? [path.dirname(dest), ''] : [dest, path.basename(src)];
+      const [parents, fileName] = path.extname(dp) ? [path.dirname(dp), ''] : [dp, path.basename(src)];
       fs.mkdirSync(parents, { recursive: true });
-      fs.copyFileSync(src, path.join(dest, fileName))
+      fs.copyFileSync(src, path.join(dp, fileName))
     }
   }
   _chkPort(port) {
     return new Promise((resolve) => {
-      const cs = net.createServer();
+      const cs = net.createServer()
       cs.once('error', _ => resolve(false))
       cs.once('listening', _ => { cs.close(_ => resolve(true)) })
       cs.listen({ port, host: 'localhost', exclusive: true })
     })
   }
-};
+}
 
 ((r = null) => {
   for (const dpSet of BLD.live ? [''] : BLD.site) {
