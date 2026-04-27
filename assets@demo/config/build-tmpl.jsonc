@@ -2,31 +2,14 @@
   "buildList": [
     {
       "label": "Demo",
-      // label: 出力に必須。`assets/templates` 以下に同名ディレクトリが必要
-      // === 出力ファイル設定 ===
       "whiteSpaceFilter": false,
       "outputSub": 0,
-      // whiteSpaceFilter: 出力ファイルの空白文字を除去する
-      // outputSub: サブディレクトリ処理、 importAssets オプションには影響しない
-      //   0: なし（デフォルト）
-      //   1: ファイル名に前方追記
-      //   2: アセットディレクトリ内の構成を維持
-
-      // === アセットのインポート設定 ===
       "importAssets": {},
       "importAssets.recursive": false,
-      // 例文:
-      // "lib": "lib"          → libディレクトリを {出力先}/lib にインポート
-      // "lib/file.md": "md.md" → lib/file.md を {出力先}/md.md にインポート
-      // キー: 入力ファイル/ディレクトリパス（プロジェクトルートから指定）
-      // 値: インポート先のサブパス（改名可能）
-      // importAssets.recursive: ディレクトリ指定時、指定ディレクトリ以下を再帰的にインポート
-
-      // === ビルドプレビュー設定 ===
       "TemplatePreview.start": "assets@demo/templates/Demo/tmpl/ejs.html",
       "TemplatePreview.styles": "index.css"
     },
-    { /* === Demo2 ビルド設定（非出力） === */
+    {
       // "label": "Demo2",
       "whiteSpaceFilter": true,
       "TemplatePreview.start": "assets@demo/templates/Demo2/tmpl/ejs.ejs",
@@ -36,6 +19,32 @@
         "from-1": "to-1",
         "from-2": "to-2"
       }
+    },
+    {
+      // label: ビルドに必須。`assets/templates` 以下に同名ディレクトリが必要
+      // 
+      // === 出力ファイル設定 ===
+      // whiteSpaceFilter（default:false）: 出力ファイルの空白文字を除去し圧縮する（しかしhtml出力は改行を除かない）
+      // outputSub: サブディレクトリ処理、 importAssets オプションには影響しない
+      //   0: アセットディレクトリ内のパス構造を無視し出力先にサブディレクトリを作成しない（default）
+      //   1: アセットディレクトリ内のパス構造を変換してファイル名に前方追記 例： {assets}/{label}/scss/lib/file.scss → html/{label}/lib--file.css
+      //   2: アセットディレクトリ内のパス構造を維持して出力
+      // 
+      // === アセットのインポート設定 ===
+      // importAssets.recursive（default:false）: 設定値=trueで指定ディレクトリ以下を再帰的にインポートする。 importAssets にディレクトリが入力指定されている時のみのオプション。
+      // importAssets: {"引用元パス":"出力先サブパス",...} で記載する。出力先ファイル名を変える事でリネームも可。
+      //  例文:
+      //  "lib": "lib"          → libディレクトリを {出力先}/lib にインポート
+      //  "lib/file.md": "md.md" → lib/file.md を {出力先}/md.md にインポート
+      // 
+      // === ビルドプレビュー設定 ===
+      // TemplatePreview.start: ビルド完了直後最初にプレビューするアセットファイル（.ejs|.html）を指定する。プレビュー機能を利用するなら設定必須。指定なしor存在しないファイルを指定した場合プレビュー機能はスキップされる。
+      // TemplatePreview.styles: プレビューファイルで固定的に読み込ませたいCSSファイル、配列型で複数指定可能。指定は出力先ファイルに限定。
+      // TemplatePreview.baseTmpl: htmlビルドのフレームワークを利用した独自テンプレート、プロジェクト内からのパスを指定しhtmlとして読み込む。プレビュー機能専用で出力には影響しない。アセット同士を組み合わせたい時に利用する。
+      // TemplatePreview.mode: TemplatePreview.baseTmpl 有効時の組み合わせパターン指定。
+      //    設定値:0 = TemplatePreview.baseTmpl の内容から文字列[[__TARGET__]]を出力htmlの内容に変換しプレビューする。（default）
+      //    設定値:1 = TemplatePreview.baseTmpl の内容から文字列[[__{出力ファイル名}__]]を{出力ファイル名}.htmlの内容に変換、文字列の指定が複数あり出力先に文字列と同名のファイル（html）があればすべてその内容に変換してプレビューする。
+      // "TemplatePreview.testCase": {"変換前":"変換後",...} で記載する。プレビュー専用の文字列変換。
     }
   ]
 }
