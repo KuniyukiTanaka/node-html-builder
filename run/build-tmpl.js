@@ -89,12 +89,14 @@ class Finarizer {
     this.Import()
     this.previewServ(BLD.site)
   }
-  Import(_) {
+  Import() {
     let from, to
     try {
       BLD.site.map(dpSet => {
         if (getProtoName(dpSet['importAssets']) !== 'Object') throw 'Invalid input Type:importAssets'
-        for ([from, to] of Object.entries(dpSet['importAssets'])) this._asset(path.normalize(from), path.join('html', dpSet['label'], to), !!dpSet['importAssets.recursive'])
+        for ([from, to] of Object.entries(dpSet['importAssets'])) {
+          this._asset(path.normalize(from), path.join('html', dpSet['label'], to), !!dpSet['importAssets.recursive'])
+        }
       })
     } catch (_e) {
       _skip({ method: 'Finarizer.Import', input: { from, to }, log: '[importAssets] invalid importFile Settings,Check build-tmpl.jsonc', _e })
@@ -131,7 +133,7 @@ class Finarizer {
     if (p.isDirectory()) {
       const subDir = fs.readdirSync(src, { withFileTypes: true }).filter(d => d.isFile() || recursive)
       for (const dirent of subDir) {
-        this._asset(path.join(src, dirent.name), path.join(dp, dirent.name))
+        this._asset(path.join(src, dirent.name), path.join(dp, dirent.name), recursive)
       }
     } else {
       if (src.match(`${path.sep}[.]`)) {
