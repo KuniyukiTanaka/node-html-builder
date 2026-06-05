@@ -147,12 +147,14 @@ const EXTRACT = new class eXtracter {
         (({ cssMinify, sass }) => {
           const postPlugins = [autoprefixer({ remove: false }), cssGap, cssMinify].filter(p => !!p)
           const { buildRoot, dir } = this.running
+
           this._output({
             method: 'CSS',
-            name: (d => (d = d ? [...d.split(path.sep), name].join('--') : name))(path.relative(buildRoot + '/scss', dir)),
+            name,
+            // name: (d => (d = d ? [...d.split(path.sep), name].join('--') : name))(path.relative(buildRoot + '/scss', dir)),
             dir: path.join('html', deploySet['label']),
             ext: '.css',
-            code: postcss(postPlugins).process(sass).css.replace('@charset "UTF-8";', '').trim()
+            code: postcss(postPlugins).process(sass).css.trim()
           })
         })({
           cssMinify: whiteSpaceFilter ? cssMinify : null,
@@ -194,7 +196,19 @@ const EXTRACT = new class eXtracter {
     ]
   }
   _output({ method, code, dir, name, ext }, pData = false) {
+
+    const subDtransform = ({ buildRoot, dir: sourceDir, deploySet: { outputSub } }) => {
+      const ptn = {
+        'CSS': 'scss',
+        'EJS': 'tmpl'
+      }
+      if (outputSub && ptn[method]) {
+        if (outputSub == 1) name = (d => (d = d ? [...d.split(path.sep), name].join('--') : name))(path.relative(path.join(buildRoot, ptn[method]), sourceDir))
+        if (outputSub == 2) dir = path.join(dir, path.relative(path.join(buildRoot, ptn[method]), sourceDir))
+      }
+    }
     try {
+      subDtransform(this.running)
       fs.writeFileSync(
         path.format({ dir: (d => (fs.mkdirSync(d, { recursive: true }), d))(dir), name, ext }),
         code

@@ -3,7 +3,7 @@
     {
       "label": "Demo",
       "whiteSpaceFilter": false,
-      "outputSub": 0,
+      "outputSub": 2,
       "importAssets": {},
       "importAssets.recursive": false,
       "TemplatePreview.start": "assets@demo/templates/Demo/tmpl/ejs.html",
